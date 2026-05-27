@@ -9,7 +9,7 @@ const categories = [
   { value: 'hobby', label: '취미/관심사', color: 'var(--warning)' },
 ];
 
-type Post = { id: string; title: string; content: string; category: string; author_nickname: string; likes: number; created_at: string };
+type Post = { id: string; title: string; content: string; category: string; author_nickname: string; likes: number; created_at: string; user_id?: string };
 type Comment = { id: string; author_nickname: string; content: string; created_at: string; user_id: string };
 
 export default function CommunityPage() {
