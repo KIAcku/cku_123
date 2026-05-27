@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { API_BASE } from '@/lib/apiClient';
 
 const emotions = [
   { value: 'happy', emoji: '😊', label: '행복해요', color: '#F59E0B' },
@@ -39,7 +40,7 @@ export default function DiaryPage() {
 
   const fetchDiaries = async () => {
     setFetching(true);
-    const res = await fetch('http://localhost:8000/api/v1/diaries', { headers: { Authorization: `Bearer ${token()}` } });
+    const res = await fetch(`${API_BASE}/diaries`, { headers: { Authorization: `Bearer ${token()}` } });
     if (res.ok) setDiaries(await res.json());
     setFetching(false);
   };
@@ -51,7 +52,7 @@ export default function DiaryPage() {
   const handleSubmit = async () => {
     if (!content.trim()) { showToast('내용을 입력해주세요'); return; }
     setLoading(true);
-    const res = await fetch('http://localhost:8000/api/v1/diaries', {
+    const res = await fetch(`${API_BASE}/diaries`, {
       method: 'POST', headers: headers(),
       body: JSON.stringify({ content, emotion, emotion_score: String(score) }),
     });
@@ -66,7 +67,7 @@ export default function DiaryPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('일기를 삭제할까요?')) return;
-    await fetch(`http://localhost:8000/api/v1/diaries/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } });
+    await fetch(`${API_BASE}/diaries/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } });
     await fetchDiaries();
     showToast('삭제되었습니다');
   };
@@ -74,7 +75,7 @@ export default function DiaryPage() {
   const handleUpdate = async () => {
     if (!editTarget) return;
     setLoading(true);
-    await fetch(`http://localhost:8000/api/v1/diaries/${editTarget.id}`, {
+    await fetch(`${API_BASE}/diaries/${editTarget.id}`, {
       method: 'PUT', headers: headers(),
       body: JSON.stringify({ content: editTarget.content, emotion: editTarget.emotion, emotion_score: editTarget.emotion_score }),
     });

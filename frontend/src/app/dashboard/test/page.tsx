@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/apiClient';
 
 // PHQ-9 기반 우울증 자가진단
 const TESTS: Record<string, { title: string; desc: string; color: string; icon: string; questions: string[]; levels: { max: number; level: string; label: string; desc: string; action: string }[] }> = {
@@ -112,7 +113,7 @@ export default function TestPage() {
     // DB 저장
     setLoading(true);
     try {
-      await fetch('http://localhost:8000/api/v1/counsel/tests', {
+      await fetch(`${API_BASE}/counsel/tests`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ test_type: selectedTest, score, answers, level: level.level }),

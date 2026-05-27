@@ -15,17 +15,29 @@ from app.api.dependencies import get_current_user
 
 router = APIRouter()
 
+VALID_ROLES = {"STUDENT", "TEACHER", "COUNSELOR", "ADMIN"}
+
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    # 이메일 중복 체크
     result = await db.execute(select(User).where(User.email == user_in.email))
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
-    
+
+    # 닉네임 중복 체크 (닉네임이 제공된 경우)
+    if user_in.nickname and user_in.nickname != "익명학생":
+        nick_result = await db.execute(select(User).where(User.nickname == user_in.nickname))
+        if nick_result.scalars().first():
+            raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
+
+    # 역할 유효성 검사
+    role = user_in.role if user_in.role in VALID_ROLES else "STUDENT"
+
     new_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         nickname=user_in.nickname or "익명학생",
-        role=user_in.role or "STUDENT",
+        role=role,
     )
     db.add(new_user)
     await db.commit()
@@ -38,7 +50,7 @@ async def login(db: AsyncSession = Depends(get_db), form_data: OAuth2PasswordReq
     user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
-    
+
     access_token = create_access_token(subject=user.id)
     user_data = UserResponse(
         id=user.id,
@@ -60,10 +72,16 @@ async def update_profile(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if update_data.nickname is not None:
+    # 닉네임 변경 시 중복 체크
+    if update_data.nickname is not None and update_data.nickname != current_user.nickname:
+        nick_result = await db.execute(select(User).where(User.nickname == update_data.nickname))
+        if nick_result.scalars().first():
+            raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
         current_user.nickname = update_data.nickname
+
     if update_data.language is not None:
         current_user.language = update_data.language
+
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)

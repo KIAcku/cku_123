@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 
 const emotionColors: Record<string, string> = {
   happy: '#F59E0B', sad: '#3B82F6', angry: '#EF4444',
@@ -38,9 +39,9 @@ export default function DashboardHome() {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const [diaryRes, postRes, statsRes] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/diaries?limit=3', { headers }),
-        fetch('http://localhost:8000/api/v1/posts?limit=3'),
-        fetch('http://localhost:8000/api/v1/diaries/stats', { headers }),
+        fetch(`${API_BASE}/diaries?limit=3`, { headers }),
+        fetch(`${API_BASE}/posts?limit=3`),
+        fetch(`${API_BASE}/diaries/stats`, { headers }),
       ]);
       if (diaryRes.ok) { const d = await diaryRes.json(); setDiaries(d.slice(0, 3)); }
       if (postRes.ok) { const p = await postRes.json(); setPosts(p.slice(0, 3)); }

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { API_BASE, authHeaders, getCurrentUserId } from '@/lib/apiClient';
 
 const categories = [
   { value: 'general', label: '일반', color: 'var(--text-secondary)' },
@@ -9,8 +10,15 @@ const categories = [
   { value: 'hobby', label: '취미/관심사', color: 'var(--warning)' },
 ];
 
-type Post = { id: string; title: string; content: string; category: string; author_nickname: string; likes: number; created_at: string; user_id?: string };
-type Comment = { id: string; author_nickname: string; content: string; created_at: string; user_id: string };
+type Post = {
+  id: string; title: string; content: string; category: string;
+  author_nickname: string; likes: number; created_at: string;
+  updated_at?: string; user_id?: string;
+};
+type Comment = {
+  id: string; author_nickname: string; content: string;
+  created_at: string; user_id: string; likes: number;
+};
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -18,19 +26,18 @@ export default function CommunityPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [showWrite, setShowWrite] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [form, setForm] = useState({ title: '', content: '', category: 'general' });
+  const [editForm, setEditForm] = useState({ title: '', content: '', category: 'general' });
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [toast, setToast] = useState('');
   const [myId, setMyId] = useState('');
-
-  const token = () => localStorage.getItem('token') || '';
-  const authHeaders = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' });
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const u = localStorage.getItem('user');
-    if (u) setMyId(JSON.parse(u).id);
+    setMyId(getCurrentUserId());
     loadPosts();
   }, []);
 
@@ -39,29 +46,43 @@ export default function CommunityPage() {
   const loadPosts = async () => {
     setFetching(true);
     const url = activeCategory === 'all'
-      ? 'http://localhost:8000/api/v1/posts'
-      : `http://localhost:8000/api/v1/posts?category=${activeCategory}`;
+      ? `${API_BASE}/posts`
+      : `${API_BASE}/posts?category=${activeCategory}`;
     const res = await fetch(url);
     if (res.ok) setPosts(await res.json());
     setFetching(false);
   };
 
   const loadComments = async (postId: string) => {
-    const res = await fetch(`http://localhost:8000/api/v1/posts/${postId}/comments`);
+    const res = await fetch(`${API_BASE}/posts/${postId}/comments`);
     if (res.ok) setComments(await res.json());
+  };
+
+  const checkLiked = async (postId: string) => {
+    const res = await fetch(`${API_BASE}/posts/${postId}/liked`, { headers: authHeaders(false) });
+    if (res.ok) {
+      const data = await res.json();
+      setLikedPosts(prev => {
+        const next = new Set(prev);
+        if (data.liked) next.add(postId); else next.delete(postId);
+        return next;
+      });
+    }
   };
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   const openPost = async (post: Post) => {
     setSelectedPost(post);
+    setEditingPost(null);
     await loadComments(post.id);
+    await checkLiked(post.id);
   };
 
   const handleSubmitPost = async () => {
     if (!form.title.trim() || !form.content.trim()) { showToast('제목과 내용을 입력해주세요'); return; }
     setLoading(true);
-    const res = await fetch('http://localhost:8000/api/v1/posts', {
+    const res = await fetch(`${API_BASE}/posts`, {
       method: 'POST', headers: authHeaders(), body: JSON.stringify(form),
     });
     if (res.ok) {
@@ -69,22 +90,54 @@ export default function CommunityPage() {
       setShowWrite(false);
       await loadPosts();
       showToast('게시글이 등록되었습니다! 🎉');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.detail || '로그인이 필요합니다');
+    }
+    setLoading(false);
+  };
+
+  const handleEditPost = async () => {
+    if (!editingPost) return;
+    if (!editForm.title.trim() || !editForm.content.trim()) { showToast('제목과 내용을 입력해주세요'); return; }
+    setLoading(true);
+    const res = await fetch(`${API_BASE}/posts/${editingPost.id}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(editForm),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedPost(updated);
+      setPosts(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setEditingPost(null);
+      showToast('게시글이 수정되었습니다 ✅');
     }
     setLoading(false);
   };
 
   const handleLike = async (postId: string) => {
-    await fetch(`http://localhost:8000/api/v1/posts/${postId}/like`, { method: 'POST' });
-    await loadPosts();
-    if (selectedPost?.id === postId) {
-      const res = await fetch(`http://localhost:8000/api/v1/posts/${postId}`);
-      if (res.ok) setSelectedPost(await res.json());
+    const res = await fetch(`${API_BASE}/posts/${postId}/like`, {
+      method: 'POST', headers: authHeaders(false),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setLikedPosts(prev => {
+        const next = new Set(prev);
+        if (data.liked) next.add(postId); else next.delete(postId);
+        return next;
+      });
+      await loadPosts();
+      if (selectedPost?.id === postId) {
+        const r = await fetch(`${API_BASE}/posts/${postId}`);
+        if (r.ok) setSelectedPost(await r.json());
+      }
+    } else {
+      showToast('로그인이 필요합니다');
     }
   };
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm('게시글을 삭제할까요?')) return;
-    await fetch(`http://localhost:8000/api/v1/posts/${postId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } });
+    await fetch(`${API_BASE}/posts/${postId}`, { method: 'DELETE', headers: authHeaders(false) });
     setSelectedPost(null);
     await loadPosts();
     showToast('삭제되었습니다');
@@ -93,7 +146,7 @@ export default function CommunityPage() {
   const handleComment = async () => {
     if (!commentText.trim() || !selectedPost) return;
     setLoading(true);
-    const res = await fetch(`http://localhost:8000/api/v1/posts/${selectedPost.id}/comments`, {
+    const res = await fetch(`${API_BASE}/posts/${selectedPost.id}/comments`, {
       method: 'POST', headers: authHeaders(), body: JSON.stringify({ content: commentText }),
     });
     if (res.ok) { setCommentText(''); await loadComments(selectedPost.id); showToast('댓글이 등록되었습니다'); }
@@ -101,10 +154,23 @@ export default function CommunityPage() {
   };
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
-    await fetch(`http://localhost:8000/api/v1/posts/${postId}/comments/${commentId}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${token()}` }
+    await fetch(`${API_BASE}/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE', headers: authHeaders(false),
     });
     await loadComments(postId);
+    showToast('댓글이 삭제되었습니다');
+  };
+
+  const handleLikeComment = async (postId: string, commentId: string) => {
+    const res = await fetch(`${API_BASE}/posts/${postId}/comments/${commentId}/like`, {
+      method: 'POST', headers: authHeaders(false),
+    });
+    if (res.ok) await loadComments(postId);
+  };
+
+  const startEdit = (post: Post) => {
+    setEditForm({ title: post.title, content: post.content, category: post.category });
+    setEditingPost(post);
   };
 
   const catLabel = (v: string) => categories.find(c => c.value === v)?.label || v;
@@ -117,7 +183,7 @@ export default function CommunityPage() {
           <h2 className="page-title">👥 학생 커뮤니티</h2>
           <p className="page-subtitle">같은 고민을 가진 친구들과 익명으로 소통해요.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setShowWrite(!showWrite); setSelectedPost(null); }}>
+        <button className="btn btn-primary" onClick={() => { setShowWrite(!showWrite); setSelectedPost(null); setEditingPost(null); }}>
           {showWrite ? '✕ 닫기' : '✏️ 글쓰기'}
         </button>
       </div>
@@ -164,10 +230,51 @@ export default function CommunityPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedPost ? '1fr 380px' : '1fr', gap: 24 }}>
+      {/* 글 수정 폼 */}
+      {editingPost && (
+        <div className="card" style={{ marginBottom: 24, border: '2px solid var(--warning)' }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 20, color: 'var(--warning)' }}>✏️ 게시글 수정</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label">카테고리</label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {categories.map(c => (
+                  <button key={c.value} type="button"
+                    style={{
+                      cursor: 'pointer', padding: '6px 14px',
+                      background: editForm.category === c.value ? `${c.color}18` : undefined,
+                      color: editForm.category === c.value ? c.color : 'var(--text-secondary)',
+                      border: `1.5px solid ${editForm.category === c.value ? c.color : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-full)', fontWeight: 600, fontSize: '0.8rem'
+                    }}
+                    onClick={() => setEditForm({ ...editForm, category: c.value })}>{c.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">제목</label>
+              <input className="form-input" value={editForm.title}
+                onChange={e => setEditForm({ ...editForm, title: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">내용</label>
+              <textarea className="form-textarea" rows={5} value={editForm.content}
+                onChange={e => setEditForm({ ...editForm, content: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setEditingPost(null)}>취소</button>
+              <button className="btn btn-primary" style={{ background: 'var(--warning)' }}
+                onClick={handleEditPost} disabled={loading}>
+                {loading ? '수정 중...' : '수정 완료'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: selectedPost ? '1fr 400px' : '1fr', gap: 24 }}>
         {/* 게시글 목록 */}
         <div>
-          {/* 카테고리 탭 */}
           <div className="tabs" style={{ marginBottom: 20 }}>
             <button className={`tab ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setActiveCategory('all')}>전체</button>
             {categories.map(c => (
@@ -195,11 +302,14 @@ export default function CommunityPage() {
                     <span>{p.author_nickname}</span>
                     <span>·</span>
                     <span>{new Date(p.created_at).toLocaleDateString('ko-KR')}</span>
+                    {p.updated_at && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(수정됨)</span>}
                   </div>
                   <h4 style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 6 }}>{p.title}</h4>
                   <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.content}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <span>❤️ {p.likes}</span>
+                    <span style={{ color: likedPosts.has(p.id) ? '#e74c3c' : undefined }}>
+                      {likedPosts.has(p.id) ? '❤️' : '🤍'} {p.likes}
+                    </span>
                     <span>클릭하여 전체 보기 →</span>
                   </div>
                 </div>
@@ -218,22 +328,40 @@ export default function CommunityPage() {
                   <span>{selectedPost.author_nickname}</span>
                 </div>
                 <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>{selectedPost.title}</h3>
+                {selectedPost.updated_at && (
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    수정됨: {new Date(selectedPost.updated_at).toLocaleString('ko-KR')}
+                  </p>
+                )}
               </div>
-              <button className="modal-close" onClick={() => setSelectedPost(null)}>✕</button>
+              <button className="modal-close" onClick={() => { setSelectedPost(null); setEditingPost(null); }}>✕</button>
             </div>
 
             <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selectedPost.content}</p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-              <button className="btn btn-sm btn-outline" onClick={() => handleLike(selectedPost.id)}>❤️ {selectedPost.likes}</button>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={() => handleLike(selectedPost.id)}
+                style={{
+                  color: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
+                  borderColor: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
+                }}
+              >
+                {likedPosts.has(selectedPost.id) ? '❤️' : '🤍'} {selectedPost.likes}
+              </button>
               {selectedPost.user_id === myId && (
-                <button className="btn btn-danger btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>🗑️ 삭제</button>
+                <>
+                  <button className="btn btn-sm" style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning)' }}
+                    onClick={() => startEdit(selectedPost)}>✏️ 수정</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>🗑️ 삭제</button>
+                </>
               )}
             </div>
 
             {/* 댓글 */}
             <h4 style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 12 }}>댓글 {comments.length}개</h4>
-            <div style={{ maxHeight: 240, overflowY: 'auto', marginBottom: 14 }}>
+            <div style={{ maxHeight: 260, overflowY: 'auto', marginBottom: 14 }}>
               {comments.length === 0 ? (
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>첫 댓글을 작성해보세요</p>
               ) : comments.map(c => (
@@ -242,10 +370,16 @@ export default function CommunityPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{c.author_nickname}</span>
-                      {c.user_id === myId && (
-                        <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: '0.72rem' }}
-                          onClick={() => handleDeleteComment(selectedPost.id, c.id)}>삭제</button>
-                      )}
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <button
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                          onClick={() => handleLikeComment(selectedPost.id, c.id)}
+                        >🤍 {c.likes || 0}</button>
+                        {c.user_id === myId && (
+                          <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: '0.72rem' }}
+                            onClick={() => handleDeleteComment(selectedPost.id, c.id)}>삭제</button>
+                        )}
+                      </div>
                     </div>
                     <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: 3 }}>{c.content}</p>
                   </div>

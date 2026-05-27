@@ -5,7 +5,8 @@ from app.core.database import engine, Base
 from app.api.v1 import auth, diary, report, community, counsel
 
 # 모든 모델 import (테이블 생성을 위해)
-from app.models import user, diary as diary_model, report as report_model, community as community_model
+from app.models import user, diary as diary_model, report as report_model
+from app.models.community import Post, Comment, PostLike, CommentLike
 from app.models import counsel as counsel_model
 
 app = FastAPI(

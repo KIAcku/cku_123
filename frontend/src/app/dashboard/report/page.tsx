@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { API_BASE } from '@/lib/apiClient';
 
 const categories = [
   { value: 'bullying', label: '학교폭력', icon: '🚨', color: 'var(--danger)' },
@@ -20,7 +21,7 @@ export default function ReportPage() {
   const handleSubmit = async () => {
     if (!form.title || !form.content) return;
     setLoading(true);
-    const res = await fetch('http://localhost:8000/api/v1/reports', {
+    const res = await fetch(`${API_BASE}/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category, title: form.title, content: `${form.content}\n\n장소: ${form.location || '미기재'}\n날짜: ${form.date || '미기재'}` }),

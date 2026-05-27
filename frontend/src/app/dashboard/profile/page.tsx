@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/apiClient';
 
 const roleLabel: Record<string, string> = { STUDENT: '학생', TEACHER: '선생님', COUNSELOR: '상담사' };
 
@@ -29,12 +30,12 @@ export default function ProfilePage() {
   }, []);
 
   const loadStats = async () => {
-    const res = await fetch('http://localhost:8000/api/v1/auth/me/stats', { headers: { Authorization: `Bearer ${token()}` } });
+    const res = await fetch(`${API_BASE}/auth/me/stats`, { headers: { Authorization: `Bearer ${token()}` } });
     if (res.ok) setStats(await res.json());
   };
 
   const loadDiaries = async () => {
-    const res = await fetch('http://localhost:8000/api/v1/diaries', { headers: { Authorization: `Bearer ${token()}` } });
+    const res = await fetch(`${API_BASE}/diaries`, { headers: { Authorization: `Bearer ${token()}` } });
     if (res.ok) setDiaries(await res.json());
   };
 
@@ -42,7 +43,7 @@ export default function ProfilePage() {
 
   const handleUpdate = async () => {
     setLoading(true);
-    const res = await fetch('http://localhost:8000/api/v1/auth/me', {
+    const res = await fetch(`${API_BASE}/auth/me`, {
       method: 'PUT', headers: authH(),
       body: JSON.stringify(form),
     });

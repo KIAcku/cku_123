@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_BASE } from '@/lib/apiClient';
 
 const roles = [
   { value: 'STUDENT', label: '학생', icon: '🎓', desc: '학업/학교생활 지원' },
@@ -27,7 +28,7 @@ export default function SignupPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await fetch('https://cku-123.onrender.com/api/v1/auth/signup', {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password, nickname: form.nickname || '익명학생', role: form.role }),
@@ -38,7 +39,7 @@ export default function SignupPage() {
       const loginForm = new FormData();
       loginForm.append('username', form.email);
       loginForm.append('password', form.password);
-      const loginRes = await fetch('http://localhost:8000/api/v1/auth/login', { method: 'POST', body: loginForm });
+      const loginRes = await fetch(`${API_BASE}/auth/login`, { method: 'POST', body: loginForm });
       const loginData = await loginRes.json();
       if (loginRes.ok) {
         localStorage.setItem('token', loginData.access_token);

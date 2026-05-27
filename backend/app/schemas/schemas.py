@@ -70,6 +70,7 @@ class PostResponse(BaseModel):
     category: Optional[str] = "general"
     likes: Optional[int] = 0
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -83,6 +84,7 @@ class CommentResponse(BaseModel):
     user_id: str
     author_nickname: Optional[str] = "익명"
     content: str
+    likes: Optional[int] = 0
     created_at: datetime
 
     class Config:
