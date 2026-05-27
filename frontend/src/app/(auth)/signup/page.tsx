@@ -27,7 +27,7 @@ export default function SignupPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/auth/signup', {
+      const res = await fetch('https://cku-123.onrender.com/api/v1/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password, nickname: form.nickname || '익명학생', role: form.role }),

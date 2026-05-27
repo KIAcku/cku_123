@@ -17,7 +17,7 @@ export default function LoginPage() {
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
-      const res = await fetch('http://localhost:8000/api/v1/auth/login', { method: 'POST', body: formData });
+      const res = await fetch('https://cku-123.onrender.com/api/v1/auth/login',{ method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || '로그인 실패');
       localStorage.setItem('token', data.access_token);
