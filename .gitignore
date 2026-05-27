@@ -1,0 +1,12 @@
+# Root gitignore
+*.log
+.DS_Store
+Thumbs.db
+.next/
+node_modules/
+venv/
+*.db
+*.sqlite3
+.env
+.env.local
+.env.production
