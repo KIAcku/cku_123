@@ -140,12 +140,11 @@ export default function CounselReportsPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid-3" style={{ marginBottom: 24 }}>
         {[
-          { label: t.high, value: highCount, ...riskConfig.high },
-          { label: t.medium, value: medCount, ...riskConfig.medium },
-          { label: t.low, value: lowCount, ...riskConfig.low },
+          { ...riskConfig.high, label: t.high, value: highCount },
+          { ...riskConfig.medium, label: t.medium, value: medCount },
+          { ...riskConfig.low, label: t.low, value: lowCount },
         ].map(c => (
           <div key={c.label} className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px' }}>
             <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-md)', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
