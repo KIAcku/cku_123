@@ -47,6 +47,20 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 async def startup_event():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        # PostgreSQL/SQLite에 누락된 새 User 컬럼들을 동적으로 추가 (마이그레이션 대용)
+        try:
+            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR;")
+        except Exception: pass
+        try:
+            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE;")
+        except Exception: pass
+        try:
+            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;")
+        except Exception: pass
+        try:
+            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_email VARCHAR;")
+        except Exception: pass
 
 # 라우터 등록
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["인증"])
