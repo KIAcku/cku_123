@@ -16,11 +16,11 @@ class Settings(BaseSettings):
         if not url:
             # 로컬 개발용 SQLite
             return "sqlite+aiosqlite:///./studentcare.db"
-        # Railway PostgreSQL URL: postgresql:// → postgresql+asyncpg://
+        # Railway PostgreSQL URL: postgresql:// → postgresql+psycopg://
         if url.startswith("postgresql://"):
-            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url.replace("postgresql://", "postgresql+psycopg://", 1)
         if url.startswith("postgres://"):
-            return url.replace("postgres://", "postgresql+asyncpg://", 1)
+            return url.replace("postgres://", "postgresql+psycopg://", 1)
         return url
 
     # CORS — 프론트엔드 URL (환경변수로 주입)
