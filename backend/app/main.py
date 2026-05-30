@@ -68,6 +68,34 @@ async def startup_event():
         except Exception as e: 
             print(f"Migration error (guardian_email): {e}")
 
+        # posts 테이블 누락 컬럼 자동 패치
+        try:
+            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_nickname VARCHAR(100) DEFAULT '익명';"))
+        except Exception as e: 
+            print(f"Migration error (posts author_nickname): {e}")
+        try:
+            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'general';"))
+        except Exception as e: 
+            print(f"Migration error (posts category): {e}")
+        try:
+            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;"))
+        except Exception as e: 
+            print(f"Migration error (posts likes): {e}")
+        try:
+            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;"))
+        except Exception as e: 
+            print(f"Migration error (posts updated_at): {e}")
+
+        # comments 테이블 누락 컬럼 자동 패치
+        try:
+            await conn.execute(text("ALTER TABLE comments ADD COLUMN IF NOT EXISTS author_nickname VARCHAR(100) DEFAULT '익명';"))
+        except Exception as e: 
+            print(f"Migration error (comments author_nickname): {e}")
+        try:
+            await conn.execute(text("ALTER TABLE comments ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;"))
+        except Exception as e: 
+            print(f"Migration error (comments likes): {e}")
+
 # 라우터 등록
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["인증"])
 app.include_router(diary.router, prefix=f"{settings.API_V1_STR}/diaries", tags=["감정 일기"])
