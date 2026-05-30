@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
+const BACKEND_BASE = API.replace('/api/v1', '');
+
 // ─── 다국어 번역 ──────────────────────────────────────────────
 const i18n: Record<string, Record<string, string>> = {
   ko: {
@@ -12,6 +15,9 @@ const i18n: Record<string, Record<string, string>> = {
     main_menu: '주요 메뉴', counseling: '상담 & 소통', support: '지원', settings: '설정',
     logout: '로그아웃', student: '학생', teacher: '선생님', counselor: '상담사',
     crisis_btn: '🆘 위기',
+    report_mgmt: '신고 내역 관리', counsel_reports: '상담 결과 보고서',
+    statistics: '통계 대시보드', students: '학생 목록', notices: '공지사항 관리',
+    counsel_mgmt: '상담 관리', help: '도움말', teacher_menu: '선생님 메뉴', counselor_menu: '상담사 메뉴',
   },
   en: {
     home: 'Home', diary: 'Emotion Diary', test: 'Self-Assessment',
@@ -20,6 +26,9 @@ const i18n: Record<string, Record<string, string>> = {
     main_menu: 'Main Menu', counseling: 'Counseling & Connect', support: 'Support', settings: 'Settings',
     logout: 'Logout', student: 'Student', teacher: 'Teacher', counselor: 'Counselor',
     crisis_btn: '🆘 Crisis',
+    report_mgmt: 'Report Management', counsel_reports: 'Counsel Reports',
+    statistics: 'Statistics', students: 'Student List', notices: 'Notice Board',
+    counsel_mgmt: 'Counsel Management', help: 'Help', teacher_menu: 'Teacher Menu', counselor_menu: 'Counselor Menu',
   },
   ja: {
     home: 'ホーム', diary: '感情日記', test: 'セルフ診断',
@@ -28,6 +37,9 @@ const i18n: Record<string, Record<string, string>> = {
     main_menu: 'メインメニュー', counseling: '相談＆交流', support: 'サポート', settings: '設定',
     logout: 'ログアウト', student: '学生', teacher: '先生', counselor: 'カウンセラー',
     crisis_btn: '🆘 危機',
+    report_mgmt: '通報管理', counsel_reports: 'カウンセル報告',
+    statistics: '統計ダッシュボード', students: '学生リスト', notices: 'お知らせ管理',
+    counsel_mgmt: '相談管理', help: 'ヘルプ', teacher_menu: '先生メニュー', counselor_menu: 'カウンセラーメニュー',
   },
   zh: {
     home: '首页', diary: '情绪日记', test: '自我评估',
@@ -36,6 +48,9 @@ const i18n: Record<string, Record<string, string>> = {
     main_menu: '主菜单', counseling: '咨询与交流', support: '支持', settings: '设置',
     logout: '退出登录', student: '学生', teacher: '教师', counselor: '咨询师',
     crisis_btn: '🆘 危机',
+    report_mgmt: '举报管理', counsel_reports: '咨询报告',
+    statistics: '统计仪表板', students: '学生名单', notices: '公告管理',
+    counsel_mgmt: '咨询管理', help: '帮助',
   },
 };
 
@@ -47,6 +62,7 @@ const themes = [
   { id: 'purple', label: '퍼플', icon: '💜', bg: '#FAF5FF', sidebar: '#3b0764', primary: '#7C3AED' },
 ];
 
+// 학생 메뉴
 const getNavSections = (t: Record<string, string>) => [
   {
     label: t.main_menu,
@@ -69,6 +85,7 @@ const getNavSections = (t: Record<string, string>) => [
     items: [
       { href: '/dashboard/crisis', icon: '🆘', label: t.crisis },
       { href: '/dashboard/resources', icon: '📚', label: t.resources },
+      { href: '/dashboard/help', icon: '❓', label: t.help || '도움말' },
     ]
   },
   {
@@ -79,13 +96,33 @@ const getNavSections = (t: Record<string, string>) => [
   }
 ];
 
-// 상담사 전용 메뉴 추가
+// 상담사 전용 메뉴
 const getCounselorSections = (t: Record<string, string>) => [
   {
     label: '상담사 메뉴',
     items: [
       { href: '/dashboard', icon: '🏠', label: t.home },
-      { href: '/dashboard/counselor', icon: '📨', label: '학생 상담 관리' },
+      { href: '/dashboard/counselor', icon: '📨', label: t.counsel_mgmt || '상담 관리' },
+      { href: '/dashboard/diary', icon: '📔', label: t.diary },
+      { href: '/dashboard/resources', icon: '📚', label: t.resources },
+      { href: '/dashboard/crisis', icon: '🆘', label: t.crisis },
+      { href: '/dashboard/help', icon: '❓', label: t.help || '도움말' },
+      { href: '/dashboard/profile', icon: '👤', label: t.profile },
+    ]
+  }
+];
+
+// 선생님 전용 메뉴
+const getTeacherSections = (t: Record<string, string>) => [
+  {
+    label: '선생님 메뉴',
+    items: [
+      { href: '/dashboard', icon: '🏠', label: t.home },
+      { href: '/dashboard/admin/reports', icon: '🚨', label: t.report_mgmt || '신고 내역 관리' },
+      { href: '/dashboard/admin/counsel-reports', icon: '📋', label: t.counsel_reports || '상담 결과 보고서' },
+      { href: '/dashboard/admin/statistics', icon: '📊', label: t.statistics || '통계 대시보드' },
+      { href: '/dashboard/admin/students', icon: '👥', label: t.students || '학생 목록' },
+      { href: '/dashboard/admin/notices', icon: '📢', label: t.notices || '공지사항 관리' },
       { href: '/dashboard/profile', icon: '👤', label: t.profile },
     ]
   }
@@ -113,6 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showLang, setShowLang] = useState(false);
   const [theme, setTheme] = useState('light');
   const [showTheme, setShowTheme] = useState(false);
+  const [unread, setUnread] = useState({ messages: 0, reports: 0, alerts: 0 });
 
   const t = i18n[lang] || i18n.ko;
 
@@ -128,6 +166,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     applyTheme(savedTheme);
   }, []);
 
+  // Poll unread counts every 10 seconds for staff users
+  useEffect(() => {
+    if (!user || user.role === 'STUDENT') return;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`${API}/notifications/unread`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) setUnread(await res.json());
+      } catch {}
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   useEffect(() => {
     const titles: Record<string, string> = {
       '/dashboard': t.home,
@@ -139,14 +193,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       '/dashboard/crisis': t.crisis,
       '/dashboard/resources': t.resources,
       '/dashboard/profile': t.profile,
-      '/dashboard/counselor': '학생 상담 관리',
+      '/dashboard/counselor': t.counsel_mgmt || '상담 관리',
+      '/dashboard/admin/reports': t.report_mgmt || '신고 내역 관리',
+      '/dashboard/admin/counsel-reports': t.counsel_reports || '상담 결과 보고서',
+      '/dashboard/admin/statistics': t.statistics || '통계 대시보드',
+      '/dashboard/admin/students': t.students || '학생 목록',
+      '/dashboard/admin/notices': t.notices || '공지사항 관리',
     };
     setPageTitle(titles[pathname] || '마음이음');
   }, [pathname, lang]);
 
   const applyTheme = (themeId: string) => {
-    const t = themes.find(t => t.id === themeId) || themes[0];
-    document.documentElement.style.setProperty('--page-bg', t.bg);
+    const th = themes.find(t => t.id === themeId) || themes[0];
+    document.documentElement.style.setProperty('--page-bg', th.bg);
     if (themeId === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
@@ -174,9 +233,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const initials = user?.nickname ? user.nickname.slice(0, 1) : '익';
-  const isCounselor = user?.role === 'COUNSELOR' || user?.role === 'TEACHER';
-  const navSections = isCounselor ? getCounselorSections(t) : getNavSections(t);
+  const isTeacher = user?.role === 'TEACHER';
+  const isCounselor = user?.role === 'COUNSELOR';
+  const navSections = isTeacher
+    ? getTeacherSections(t)
+    : isCounselor
+    ? getCounselorSections(t)
+    : getNavSections(t);
   const currentTheme = themes.find(th => th.id === theme) || themes[0];
+  const avatarUrl = user?.avatar_url;
 
   return (
     <div className="dashboard-layout">
@@ -188,10 +253,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="sidebar-logo-text">마음이음</span>
         </div>
 
-        {/* 상담사 배지 */}
+        {/* 역할 배지 */}
+        {isTeacher && (
+          <div style={{ margin: '0 16px 12px', background: 'rgba(59,130,246,0.2)', borderRadius: 8, padding: '6px 10px', fontSize: '0.75rem', color: '#60a5fa', fontWeight: 700, textAlign: 'center' }}>
+            🏫 선생님 계정
+          </div>
+        )}
         {isCounselor && (
           <div style={{ margin: '0 16px 12px', background: 'rgba(255,200,0,0.2)', borderRadius: 8, padding: '6px 10px', fontSize: '0.75rem', color: '#FFD700', fontWeight: 700, textAlign: 'center' }}>
-            👩‍💼 {roleLabel(lang, user?.role)} 계정
+            👩‍💼 상담사 계정
           </div>
         )}
 
@@ -204,11 +274,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 const isActive = item.href === '/dashboard'
                   ? pathname === '/dashboard'
                   : pathname.startsWith(item.href);
+                const badge = item.href === '/dashboard/counselor' ? unread.messages :
+                              item.href === '/dashboard/admin/reports' ? unread.reports : 0;
                 return (
                   <Link key={item.href} href={item.href}
                     className={`sidebar-nav-item ${isActive ? 'active' : ''}`}>
                     <span className="sidebar-nav-icon">{item.icon}</span>
                     <span>{item.label}</span>
+                    {badge > 0 && (
+                      <span style={{
+                        background: '#ef4444', color: 'white', borderRadius: '50%',
+                        width: 18, height: 18, fontSize: '0.65rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginLeft: 'auto', fontWeight: 700, flexShrink: 0
+                      }}>
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -219,7 +301,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* 하단 프로필 */}
         <div className="sidebar-footer">
           <div className="sidebar-user" onClick={() => router.push('/dashboard/profile')}>
-            <div className="avatar avatar-md">{initials}</div>
+            {avatarUrl ? (
+              <img
+                src={`${BACKEND_BASE}${avatarUrl}`}
+                style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                alt="avatar"
+              />
+            ) : (
+              <div className="avatar avatar-md">{initials}</div>
+            )}
             <div className="sidebar-user-info">
               <div className="sidebar-user-name truncate">{user?.nickname || '익명학생'}</div>
               <div className="sidebar-user-role">{roleLabel(lang, user?.role || 'STUDENT')}</div>
@@ -323,9 +413,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               fontSize: '0.75rem', fontWeight: 700, color: 'var(--danger)', cursor: 'pointer'
             }}>{t.crisis_btn}</button>
 
-            <div className="avatar avatar-md" style={{ cursor: 'pointer' }}
-              onClick={() => router.push('/dashboard/profile')}>
-              {initials}
+            {/* 헤더 아바타 */}
+            <div
+              onClick={() => router.push('/dashboard/profile')}
+              style={{ cursor: 'pointer', flexShrink: 0 }}
+            >
+              {avatarUrl ? (
+                <img
+                  src={`${BACKEND_BASE}${avatarUrl}`}
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                  alt="avatar"
+                />
+              ) : (
+                <div className="avatar avatar-md">{initials}</div>
+              )}
             </div>
           </div>
         </header>

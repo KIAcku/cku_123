@@ -33,7 +33,10 @@ export default function DiaryPage() {
   const [toast, setToast] = useState('');
   const [editTarget, setEditTarget] = useState<Diary | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'write' | 'list'>('write');
+  const [activeTab, setActiveTab] = useState<'write' | 'list' | 'calendar'>('write');
+  const [calendarData, setCalendarData] = useState<{ date: string; emotion: string }[]>([]);
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
 
   const token = () => localStorage.getItem('token') || '';
   const headers = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' });
@@ -46,6 +49,17 @@ export default function DiaryPage() {
   };
 
   useEffect(() => { fetchDiaries(); }, []);
+
+  const fetchCalendar = async (year: number, month: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/diaries/calendar?year=${year}&month=${month}`, { headers: { Authorization: `Bearer ${token()}` } });
+      if (res.ok) setCalendarData(await res.json());
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (activeTab === 'calendar') fetchCalendar(calYear, calMonth);
+  }, [activeTab, calYear, calMonth]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -99,6 +113,7 @@ export default function DiaryPage() {
       <div className="tabs" style={{ marginBottom: 24 }}>
         <button className={`tab ${activeTab === 'write' ? 'active' : ''}`} onClick={() => setActiveTab('write')}>✏️ 오늘 일기 쓰기</button>
         <button className={`tab ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>📋 내 일기 목록 ({diaries.length})</button>
+        <button className={`tab ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>📅 감정 캘린더</button>
       </div>
 
       {activeTab === 'write' && (
@@ -236,6 +251,89 @@ export default function DiaryPage() {
           </div>
         </div>
       )}
+
+      {/* 감정 캘린더 탭 */}
+      {activeTab === 'calendar' && (() => {
+        const emotionEmoji: Record<string, string> = {
+          happy: '😊', sad: '😢', angry: '😠', anxious: '😰', neutral: '😐',
+          tired: '😴', excited: '🤩', grateful: '🥰', lonely: '😔', hopeful: '🌟'
+        };
+        const emotionColor: Record<string, string> = {
+          happy: '#fef08a', sad: '#bfdbfe', angry: '#fecaca', anxious: '#fde68a',
+          neutral: '#e5e7eb', tired: '#d1d5db', excited: '#fbcfe8', grateful: '#bbf7d0',
+          lonely: '#c7d2fe', hopeful: '#fed7aa'
+        };
+        const calMap: Record<string, string> = {};
+        calendarData.forEach(e => { calMap[e.date] = e.emotion; });
+        const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+        const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+        const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+        const weeks = ['일', '월', '화', '수', '목', '금', '토'];
+
+        // Top emotions this month
+        const emotionCount: Record<string, number> = {};
+        calendarData.forEach(e => { emotionCount[e.emotion] = (emotionCount[e.emotion] || 0) + 1; });
+        const topEmotions = Object.entries(emotionCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+        return (
+          <div>
+            {/* 월 네비게이션 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <button onClick={() => { if (calMonth === 1) { setCalYear(y => y - 1); setCalMonth(12); } else setCalMonth(m => m - 1); }}
+                style={{ background: 'var(--bg-subtle)', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontSize: '1rem' }}>←</button>
+              <h3 style={{ fontWeight: 700, fontSize: '1.2rem' }}>{calYear}년 {calMonth}월</h3>
+              <button onClick={() => { if (calMonth === 12) { setCalYear(y => y + 1); setCalMonth(1); } else setCalMonth(m => m + 1); }}
+                style={{ background: 'var(--bg-subtle)', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontSize: '1rem' }}>→</button>
+            </div>
+
+            {/* 이번 달 감정 통계 */}
+            {topEmotions.length > 0 && (
+              <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10 }}>이번 달 주요 감정</div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {topEmotions.map(([emotion, count]) => (
+                    <div key={emotion} style={{ display: 'flex', alignItems: 'center', gap: 6, background: emotionColor[emotion] || '#e5e7eb', borderRadius: 20, padding: '6px 14px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{emotionEmoji[emotion] || '😐'}</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{count}회</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 캘린더 그리드 */}
+            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)' }}>
+              {/* 요일 헤더 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
+                {weeks.map((w, i) => (
+                  <div key={w} style={{ textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: i === 0 ? '#ef4444' : i === 6 ? '#3b82f6' : 'var(--text-muted)', padding: '6px 0' }}>{w}</div>
+                ))}
+              </div>
+              {/* 날짜 셀 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                {cells.map((day, idx) => {
+                  if (day === null) return <div key={`empty-${idx}`} />;
+                  const dateStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const emotion = calMap[dateStr];
+                  const isToday = dateStr === new Date().toISOString().slice(0, 10);
+                  return (
+                    <div key={dateStr} style={{
+                      aspectRatio: '1', borderRadius: 10, padding: 4,
+                      background: emotion ? emotionColor[emotion] : 'var(--bg-subtle)',
+                      border: isToday ? '2px solid var(--primary)' : '2px solid transparent',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.15s', cursor: emotion ? 'pointer' : 'default',
+                    }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary)' : 'var(--text-secondary)' }}>{day}</div>
+                      {emotion && <div style={{ fontSize: '1.1rem', lineHeight: 1 }}>{emotionEmoji[emotion] || '😐'}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {toast && <div className={`toast success`}>{toast}</div>}
     </div>

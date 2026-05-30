@@ -36,3 +36,14 @@ class CounselMessage(Base):
     sender_role = Column(String, default="user")  # 'user' or 'counselor'
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CounselReport(Base):
+    __tablename__ = "counsel_reports"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String, ForeignKey("counsel_sessions.id"), nullable=False)
+    counselor_id = Column(String, ForeignKey("users.id"), nullable=False)
+    summary = Column(Text, nullable=False)
+    risk_level = Column(String, default="low")  # low, medium, high
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+

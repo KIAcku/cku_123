@@ -10,7 +10,11 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     nickname = Column(String, default="익명학생")
-    role = Column(String, default="STUDENT")  # STUDENT, TEACHER, ADMIN
+    role = Column(String, default="STUDENT")  # STUDENT, TEACHER, COUNSELOR, ADMIN
     language = Column(String, default="ko")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    avatar_url = Column(String, nullable=True)           # profile photo URL
+    is_online = Column(Boolean, default=False)            # online status
+    last_seen_at = Column(DateTime(timezone=True), nullable=True)  # last activity
+    guardian_email = Column(String, nullable=True)        # guardian contact

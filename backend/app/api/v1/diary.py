@@ -81,6 +81,25 @@ async def get_diaries(
     )
     return result.scalars().all()
 
+@router.get("/calendar")
+async def get_diary_calendar(
+    year: int, month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    start = datetime(year, month, 1)
+    if month == 12:
+        end = datetime(year + 1, 1, 1)
+    else:
+        end = datetime(year, month + 1, 1)
+    res = await db.execute(
+        select(DiaryEntry.created_at, DiaryEntry.emotion)
+        .where(DiaryEntry.user_id == current_user.id, DiaryEntry.created_at >= start, DiaryEntry.created_at < end)
+        .order_by(DiaryEntry.created_at.asc())
+    )
+    entries = res.all()
+    return [{"date": str(e[0].date()), "emotion": e[1]} for e in entries]
+
 @router.get("/{diary_id}", response_model=DiaryResponse)
 async def get_diary(
     diary_id: str,
@@ -94,6 +113,7 @@ async def get_diary(
     if not entry:
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
     return entry
+
 
 @router.put("/{diary_id}", response_model=DiaryResponse)
 async def update_diary(

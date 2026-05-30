@@ -14,6 +14,8 @@ class UserResponse(BaseModel):
     role: Optional[str] = "STUDENT"
     language: Optional[str] = "ko"
     is_active: Optional[bool] = True
+    avatar_url: Optional[str] = None
+    guardian_email: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -21,8 +23,11 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     nickname: Optional[str] = None
     language: Optional[str] = None
+    avatar_url: Optional[str] = None
+    guardian_email: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+

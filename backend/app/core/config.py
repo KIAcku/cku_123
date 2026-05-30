@@ -26,7 +26,15 @@ class Settings(BaseSettings):
     # CORS — 프론트엔드 URL (환경변수로 주입)
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Email (SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM: str = "noreply@maumium.com"
+
     class Config:
         env_file = ".env"
 
 settings = Settings()
+
