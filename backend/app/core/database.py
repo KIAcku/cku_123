@@ -14,7 +14,7 @@ else:
         settings.ASYNC_DATABASE_URL,
         echo=False,
         future=True,
-        connect_args={"prepared_statement_cache_size": 0}
+        connect_args={"statement_cache_size": 0}
     )
 
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
