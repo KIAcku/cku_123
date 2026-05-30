@@ -1,6 +1,7 @@
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 from app.core.config import settings
 
 db_url = settings.ASYNC_DATABASE_URL
@@ -25,7 +26,9 @@ else:
     engine = create_async_engine(
         db_url,
         echo=False,
-        future=True
+        future=True,
+        poolclass=NullPool,
+        connect_args={"statement_cache_size": 0}
     )
 
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
