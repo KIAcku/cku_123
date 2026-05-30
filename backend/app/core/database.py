@@ -1,3 +1,4 @@
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
@@ -12,12 +13,14 @@ if "sqlite" in db_url:
         connect_args={"check_same_thread": False}
     )
 else:
-    # URL 쿼리 파라미터로 prepared_statement_cache_size=0 추가하여 
-    # SQLAlchemy의 쿼리 캐시 처리를 완전히 우회하고 TypeError를 방지합니다.
-    if "?" in db_url:
-        db_url += "&prepared_statement_cache_size=0"
-    else:
-        db_url += "?prepared_statement_cache_size=0"
+    # URL을 안전하게 파싱하여 prepared_statement_cache_size를 0으로 설정 (중복 파라미터 방지)
+    parsed_url = urlparse(db_url)
+    query_params = dict(parse_qsl(parsed_url.query))
+    query_params["prepared_statement_cache_size"] = "0"
+    
+    new_query = urlencode(query_params)
+    parsed_url = parsed_url._replace(query=new_query)
+    db_url = urlunparse(parsed_url)
         
     engine = create_async_engine(
         db_url,
