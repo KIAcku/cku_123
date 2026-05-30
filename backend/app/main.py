@@ -43,6 +43,8 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "avatars"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+from sqlalchemy import text
+
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
@@ -50,17 +52,21 @@ async def startup_event():
         
         # PostgreSQL/SQLite에 누락된 새 User 컬럼들을 동적으로 추가 (마이그레이션 대용)
         try:
-            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR;")
-        except Exception: pass
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR;"))
+        except Exception as e: 
+            print(f"Migration error (avatar_url): {e}")
         try:
-            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE;")
-        except Exception: pass
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE;"))
+        except Exception as e: 
+            print(f"Migration error (is_online): {e}")
         try:
-            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;")
-        except Exception: pass
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;"))
+        except Exception as e: 
+            print(f"Migration error (last_seen_at): {e}")
         try:
-            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_email VARCHAR;")
-        except Exception: pass
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_email VARCHAR;"))
+        except Exception as e: 
+            print(f"Migration error (guardian_email): {e}")
 
 # 라우터 등록
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["인증"])
