@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useLangStore } from '@/store/langStore';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/apiClient';
 
@@ -76,7 +77,7 @@ export default function DashboardHome() {
   const [posts, setPosts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [lang, setLang] = useState('ko');
+  const { lang } = useLangStore();
 
   const t = i18n[lang] || i18n.ko;
 
@@ -94,21 +95,7 @@ export default function DashboardHome() {
   useEffect(() => {
     const u = localStorage.getItem('user');
     if (u) setUser(JSON.parse(u));
-    const savedLang = localStorage.getItem('lang') || 'ko';
-    setLang(savedLang);
     loadData();
-
-    // 언어 변경 감지 이벤트 리스너 추가 (Header 등에서 강제 전환 시 반영용)
-    const handleLangChange = () => {
-      const updatedLang = localStorage.getItem('lang') || 'ko';
-      setLang(updatedLang);
-    };
-    window.addEventListener('storage', handleLangChange);
-    window.addEventListener('langChange', handleLangChange);
-    return () => {
-      window.removeEventListener('storage', handleLangChange);
-      window.removeEventListener('langChange', handleLangChange);
-    };
   }, []);
 
   const loadData = async () => {

@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useLangStore } from '@/store/langStore';
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 const BACKEND_BASE = API.replace('/api/v1', '');
@@ -146,7 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [pageTitle, setPageTitle] = useState('홈');
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [showLang, setShowLang] = useState(false);
   const [theme, setTheme] = useState('light');
   const [showTheme, setShowTheme] = useState(false);
@@ -215,7 +217,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const switchLang = (code: string) => {
     setLang(code);
-    localStorage.setItem('lang', code);
     setShowLang(false);
   };
 
@@ -432,7 +433,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* 페이지 콘텐츠 */}
-        <main style={{ flex: 1 }}>
+        <main style={{ flex: 1 }} key={lang}>
           {children}
         </main>
       </div>

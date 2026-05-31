@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useLangStore } from '@/store/langStore';
 
 const i18n: Record<string, {
   title: string; subtitle: string; faq: string; guide: string; crisis: string;
@@ -114,14 +115,11 @@ const i18n: Record<string, {
 };
 
 export default function HelpPage() {
-  const [lang, setLang] = useState('ko');
+  const { lang } = useLangStore();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [tab, setTab] = useState<'faq' | 'guide' | 'crisis'>('faq');
 
-  useEffect(() => {
-    const savedLang = localStorage.getItem('lang') || 'ko';
-    setLang(savedLang);
-  }, []);
+
 
   const d = i18n[lang] || i18n.ko;
 
