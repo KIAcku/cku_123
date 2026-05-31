@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useLangStore } from '@/store/langStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 const getHeaders = (json = true) => {
@@ -32,6 +33,12 @@ const i18n: Record<string, Record<string, string>> = {
     counselor: '상담사', booking_notice: '예약 상담은 준비 중입니다. 즉시 상담을 이용해 주세요.',
     started: '상담이 시작되었습니다 💬', ended_msg: '상담이 종료되었습니다',
     enter_topic: '상담 주제를 입력해주세요',
+    cat_study: '학업·공부', cat_study_desc: '시험 스트레스, 학점 관리',
+    cat_career: '진로·취업', cat_career_desc: '진로 고민, 미래 불안',
+    cat_social: '인간관계', cat_social_desc: '친구, 교우, 따돌림',
+    cat_mental: '심리·멘탈', cat_mental_desc: '번아웃, 우울, 불안',
+    cat_family: '가족·가정', cat_family_desc: '가족 갈등, 가정 문제',
+    cat_etc: '기타 고민', cat_etc_desc: '무엇이든 털어놓으세요',
   },
   en: {
     title: '1:1 Anonymous Counsel', subtitle: 'Study, career, relationships, mental health — consult anonymously.',
@@ -53,6 +60,12 @@ const i18n: Record<string, Record<string, string>> = {
     counselor: 'Counselor', booking_notice: 'Scheduled counseling is coming soon. Please use instant counsel.',
     started: 'Counseling started 💬', ended_msg: 'Counseling ended',
     enter_topic: 'Please enter a topic',
+    cat_study: 'Academics/Study', cat_study_desc: 'Exam stress, GPA management',
+    cat_career: 'Career/Job', cat_career_desc: 'Career worries, future anxiety',
+    cat_social: 'Relationships', cat_social_desc: 'Friends, peers, bullying',
+    cat_mental: 'Mental Health', cat_mental_desc: 'Burnout, depression, anxiety',
+    cat_family: 'Family', cat_family_desc: 'Family conflict, home issues',
+    cat_etc: 'Other Concerns', cat_etc_desc: 'Share anything on your mind',
   },
   ja: {
     title: '1:1 匿名相談', subtitle: '学業、進路、人間関係、心理 — 匿名で安全に相談できます。',
@@ -74,6 +87,12 @@ const i18n: Record<string, Record<string, string>> = {
     counselor: 'カウンセラー', booking_notice: '予約相談は準備中です。即時相談をご利用ください。',
     started: '相談が始まりました 💬', ended_msg: '相談が終了しました',
     enter_topic: 'テーマを入力してください',
+    cat_study: '学業・勉強', cat_study_desc: '試験のストレス、成績管理',
+    cat_career: '進路・就職', cat_career_desc: '進路の悩み、将来の不安',
+    cat_social: '人間関係', cat_social_desc: '友人、交友、いじめ',
+    cat_mental: '心理・メンタル', cat_mental_desc: '燃え尽き症候群、うつ、不安',
+    cat_family: '家族・家庭', cat_family_desc: '家族の葛藤、家庭問題',
+    cat_etc: 'その他の悩み', cat_etc_desc: '何でも打ち明けてください',
   },
   zh: {
     title: '1对1匿名咨询', subtitle: '学习、职业、人际关系、心理 — 匿名安全咨询。',
@@ -95,6 +114,12 @@ const i18n: Record<string, Record<string, string>> = {
     counselor: '咨询师', booking_notice: '预约咨询即将推出，请使用即时咨询。',
     started: '咨询已开始 💬', ended_msg: '咨询已结束',
     enter_topic: '请输入咨询主题',
+    cat_study: '学业·学习', cat_study_desc: '考试压力，绩点管理',
+    cat_career: '前途·就业', cat_career_desc: '职业规划，未来焦虑',
+    cat_social: '人际关系', cat_social_desc: '朋友，社交，排挤',
+    cat_mental: '心理·精神', cat_mental_desc: '职业倦怠，抑郁，焦虑',
+    cat_family: '家庭·家族', cat_family_desc: '家庭矛盾，家庭问题',
+    cat_etc: '其他烦恼', cat_etc_desc: '倾诉任何烦恼',
   },
 };
 
@@ -116,6 +141,7 @@ export default function CounselPage() {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [concern, setConcern] = useState('');
+  const { lang } = useLangStore();
   const [selectedCat, setSelectedCat] = useState('');
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -124,16 +150,23 @@ export default function CounselPage() {
   const [toast, setToast] = useState('');
   const [onlineCounselors, setOnlineCounselors] = useState(0);
   const [counselTab, setCounselTab] = useState<'instant' | 'booking'>('instant');
-  const [lang, setLang] = useState('ko');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const t = i18n[lang] || i18n.ko;
 
+  const categories = CONCERN_CATEGORIES.map(c => {
+    const nameKey = `cat_${c.id}`;
+    const descKey = `cat_${c.id}_desc`;
+    return {
+      ...c,
+      name: t[nameKey] || c.name,
+      desc: t[descKey] || c.desc
+    };
+  });
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') || 'ko';
-    setLang(savedLang);
     loadSessions();
     // Fetch online counselors
     fetch(`${API}/counselors/online`, { headers: getHeaders(false) })
@@ -173,7 +206,7 @@ export default function CounselPage() {
   const startSession = async () => {
     if (!concern.trim()) { showToast(t.enter_topic); return; }
     setLoading(true);
-    const fullConcern = `[${CONCERN_CATEGORIES.find(c => c.id === selectedCat)?.name || '기타'}] ${concern}`;
+    const fullConcern = `[${categories.find(c => c.id === selectedCat)?.name || '기타'}] ${concern}`;
     try {
       const res = await fetch(`${API}/counsel/sessions`, {
         method: 'POST', headers: getHeaders(),
@@ -410,7 +443,7 @@ export default function CounselPage() {
                 <button onClick={() => setShowNewModal(true)} className="btn btn-primary btn-sm">{t.new_counsel}</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-                {CONCERN_CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <div key={cat.id}
                     onClick={() => { setSelectedCat(cat.id); setShowNewModal(true); }}
                     style={{ background: '#F8F9FA', borderRadius: 14, padding: '24px 16px', textAlign: 'center', cursor: 'pointer', border: '2px solid transparent', transition: 'all .2s', boxShadow: '0 1px 4px rgba(0,0,0,.04)' }}
@@ -471,7 +504,7 @@ export default function CounselPage() {
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: '.83rem', fontWeight: 600, display: 'block', marginBottom: 6, color: '#444' }}>{t.category}</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {CONCERN_CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <button key={cat.id} onClick={() => setSelectedCat(cat.id)} style={{
                     padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
                     border: `2px solid ${selectedCat === cat.id ? cat.color : '#dee2e6'}`,
