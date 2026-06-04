@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLangStore } from '@/store/langStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 
@@ -79,7 +80,7 @@ const statusColor: Record<string, { bg: string; color: string; icon: string }> =
 
 export default function AdminReportsPage() {
   const router = useRouter();
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState('all');

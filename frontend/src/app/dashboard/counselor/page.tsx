@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useLangStore } from '@/store/langStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 const getHeaders = (json = true) => {
@@ -109,7 +110,7 @@ export default function CounselorPage() {
   const [toast, setToast] = useState('');
   const [user, setUser] = useState<any>(null);
   const [tab, setTab] = useState<'waiting' | 'active' | 'closed'>('active');
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [showReport, setShowReport] = useState(false);
   const [reportSummary, setReportSummary] = useState('');
   const [riskLevel, setRiskLevel] = useState<'low' | 'medium' | 'high' | 'critical'>('low');

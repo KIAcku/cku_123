@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useLangStore } from '@/store/langStore';
 
 const i18n: Record<string, Record<string, string>> = {
   ko: {
@@ -33,7 +34,7 @@ const i18n: Record<string, Record<string, string>> = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

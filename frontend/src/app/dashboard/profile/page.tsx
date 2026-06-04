@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLangStore } from '@/store/langStore';
 import { API_BASE } from '@/lib/apiClient';
 
 const API = API_BASE;
@@ -114,7 +115,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'diaries'>('info');
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
 
   // Avatar upload
   const [uploadProgress, setUploadProgress] = useState(false);

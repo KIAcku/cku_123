@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLangStore } from '@/store/langStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 
@@ -67,7 +68,7 @@ const categoryGradients: Record<string, string> = {
 
 export default function StatisticsPage() {
   const router = useRouter();
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [stats, setStats] = useState<Statistics>({});
   const [loading, setLoading] = useState(true);
   const [animated, setAnimated] = useState(false);

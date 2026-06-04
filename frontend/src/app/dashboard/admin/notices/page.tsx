@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLangStore } from '@/store/langStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 
@@ -69,7 +70,7 @@ interface Notice {
 
 export default function NoticesPage() {
   const router = useRouter();
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

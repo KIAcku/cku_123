@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLangStore } from '@/store/langStore';
 
 const i18n: Record<string, Record<string, string>> = {
   ko: {
@@ -63,7 +64,7 @@ const i18n: Record<string, Record<string, string>> = {
 
 export default function StudentsPage() {
   const router = useRouter();
-  const [lang, setLang] = useState('ko');
+  const { lang, setLang } = useLangStore();
   const [user, setUser] = useState<any>(null);
 
   const t = i18n[lang] || i18n.ko;
