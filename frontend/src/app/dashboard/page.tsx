@@ -86,7 +86,7 @@ const containerVariants = {
 };
 const itemVariants = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const } }
 };
 
 export default function DashboardHome() {
@@ -215,7 +215,7 @@ export default function DashboardHome() {
 
         {/* ── 빠른 메뉴 ── */}
         <motion.div variants={itemVariants} style={{ marginBottom: 28 }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 14, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.8rem' }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 14, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.8rem' }}>
             {t.quick_menu}
           </h3>
           <div className="grid-4">
