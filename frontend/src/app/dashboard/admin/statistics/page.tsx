@@ -191,7 +191,7 @@ export default function StatisticsPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         {/* Category Distribution */}
-        <div className="card">
+        <div className="glass-card">
           <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>📊</span> {t.category_dist}
           </h3>
@@ -220,7 +220,7 @@ export default function StatisticsPage() {
         </div>
 
         {/* Emotion Distribution */}
-        <div className="card">
+        <div className="glass-card">
           <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>😊</span> {t.emotion_dist}
           </h3>
@@ -240,7 +240,7 @@ export default function StatisticsPage() {
                 >
                   <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>{item.emoji}</div>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item.emotion}</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary)', marginTop: 4 }}>{item.count}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--sunset-pink)', marginTop: 4 }}>{item.count}</div>
                 </div>
               );
             })}
@@ -250,17 +250,17 @@ export default function StatisticsPage() {
 
       {/* Monthly Comparison */}
       {monthly && (
-        <div className="card">
+        <div className="glass-card">
           <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>📅</span> {t.monthly_compare}
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             <div style={{
-              background: 'var(--primary-light)', borderRadius: 'var(--radius-lg)',
+              background: 'rgba(255,45,120,0.1)', borderRadius: 'var(--radius-lg)',
               padding: '24px', textAlign: 'center',
             }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>{t.this_month}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary)' }}>{monthly.this_month}</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--sunset-pink)', marginBottom: 8 }}>{t.this_month}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--sunset-pink)' }}>{monthly.this_month}</div>
             </div>
             <div style={{
               background: monthDiff > 0 ? 'var(--danger-light)' : monthDiff < 0 ? 'var(--secondary-light)' : 'var(--bg-subtle)',

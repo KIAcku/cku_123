@@ -390,15 +390,15 @@ export default function CounselPage() {
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '28px' }}>
         {/* 탭: 즉시상담 / 예약상담 */}
-        <div className="tabs" style={{ marginBottom: 24 }}>
+        <div className="tabs-glass" style={{ marginBottom: 24 }}>
           <button
-            className={`tab ${counselTab === 'instant' ? 'active' : ''}`}
+            className={`tab-glass ${counselTab === 'instant' ? 'active' : ''}`}
             onClick={() => setCounselTab('instant')}
           >
             ⚡ {t.instant}
           </button>
           <button
-            className={`tab ${counselTab === 'booking' ? 'active' : ''}`}
+            className={`tab-glass ${counselTab === 'booking' ? 'active' : ''}`}
             onClick={() => setCounselTab('booking')}
           >
             📅 {t.booking}
@@ -407,11 +407,11 @@ export default function CounselPage() {
 
         {counselTab === 'booking' ? (
           /* 예약 상담 탭 */
-          <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div className="glass-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: '3rem', marginBottom: 16 }}>📅</div>
             <h3 style={{ fontWeight: 700, marginBottom: 8 }}>{t.booking}</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t.booking_notice}</p>
-            <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => setCounselTab('instant')}>
+            <button className="btn btn-sunset" style={{ marginTop: 20 }} onClick={() => setCounselTab('instant')}>
               ⚡ {t.instant}으로 이동
             </button>
           </div>
@@ -440,7 +440,7 @@ export default function CounselPage() {
             <div style={{ marginBottom: 36 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{t.concern}</h3>
-                <button onClick={() => setShowNewModal(true)} className="btn btn-primary btn-sm">{t.new_counsel}</button>
+                <button onClick={() => setShowNewModal(true)} className="btn btn-sunset btn-sm">{t.new_counsel}</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
                 {categories.map(cat => (
@@ -498,7 +498,7 @@ export default function CounselPage() {
       {showNewModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 20 }}
           onClick={() => setShowNewModal(false)}>
-          <div style={{ background: 'white', borderRadius: 20, padding: 36, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}
+          <div style={{ background: 'var(--bg-layer2)', borderRadius: 20, padding: 36, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}
             onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 22 }}>상담 신청하기</h2>
             <div style={{ marginBottom: 16 }}>

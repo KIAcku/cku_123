@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 const i18n: Record<string, Record<string, string>> = {
@@ -9,32 +10,24 @@ const i18n: Record<string, Record<string, string>> = {
     email: '이메일', password: '비밀번호', email_ph: 'student@school.edu', pass_ph: '비밀번호 입력',
     login: '로그인', logging_in: '로그인 중...', find_id: '아이디 찾기', find_pw: '비밀번호 찾기',
     no_account: '아직 계정이 없으신가요?', signup: '회원가입',
-    panel_title: '마음이음', panel_sub: '당신의 마음을 안전하게 이어드립니다.\n감정 일기, 익명 신고, 학생 커뮤니티',
-    menu: '📔 감정 일기 작성,🚨 익명 신고 접수,👥 학생 커뮤니티,📊 감정 통계 분석'
   },
   en: {
     back: '← Home', greeting: 'Welcome back! 👋', subtitle: 'Log in with your email and password',
     email: 'Email', password: 'Password', email_ph: 'student@school.edu', pass_ph: 'Enter password',
-    login: 'Login', logging_in: 'Logging in...', find_id: 'Find ID', find_pw: 'Find Password',
+    login: 'Login', logging_in: 'Logging in...', find_id: 'Find ID', find_pw: 'Forgot Password',
     no_account: "Don't have an account?", signup: 'Sign Up',
-    panel_title: 'MaumIeum', panel_sub: 'Connecting your heart safely.\nEmotion diary, anonymous report, student community',
-    menu: '📔 Emotion Diary,🚨 Anonymous Report,👥 Student Community,📊 Emotion Statistics'
   },
   ja: {
     back: '← ホームへ', greeting: 'おかえりなさい！👋', subtitle: 'メールとパスワードでログインしてください',
     email: 'メールアドレス', password: 'パスワード', email_ph: 'student@school.edu', pass_ph: 'パスワードを入力',
     login: 'ログイン', logging_in: 'ログイン中...', find_id: 'ID検索', find_pw: 'パスワード再設定',
     no_account: 'アカウントをお持ちでないですか？', signup: '新規登録',
-    panel_title: 'マウムイウム', panel_sub: 'あなたの心を安全につなぎます。\n感情日記、匿名報告、学生コミュニティ',
-    menu: '📔 感情日記,🚨 匿名報告,👥 学生コミュニティ,📊 感情分析'
   },
   zh: {
     back: '← 首页', greeting: '欢迎回来！👋', subtitle: '使用邮箱和密码登录',
     email: '邮箱', password: '密码', email_ph: 'student@school.edu', pass_ph: '请输入密码',
-    login: '登录', logging_in: '登录中...', find_id: '找回账号', find_pw: '找回密码',
+    login: '登录', logging_in: '登录中...', find_id: '找回账号', find_pw: '忘记密码',
     no_account: '还没有账号？', signup: '注册',
-    panel_title: '마음이음', panel_sub: '安全连接您的内心。\n情绪日记、匿名举报、学生社区',
-    menu: '📔 情绪日记,🚨 匿名举报,👥 学生社区,📊 情绪统计'
   },
 };
 
@@ -45,6 +38,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
     const savedLang = localStorage.getItem('lang') || 'ko';
@@ -60,7 +54,7 @@ export default function LoginPage() {
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
-      const res = await fetch('https://cku-123.onrender.com/api/v1/auth/login',{ method: 'POST', body: formData });
+      const res = await fetch('https://cku-123.onrender.com/api/v1/auth/login', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || '로그인 실패');
       localStorage.setItem('token', data.access_token);
@@ -74,81 +68,143 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-layout">
-      {/* 왼쪽 패널 */}
-      <div className="auth-panel">
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>💚</div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 12 }}>{t.panel_title}</h1>
-          <p style={{ opacity: 0.85, lineHeight: 1.7 }}>
-            {t.panel_sub.split('\n').map((line, i) => (
-              <span key={i}>{line}{i < t.panel_sub.split('\n').length - 1 && <br />}</span>
-            ))}
-          </p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 280 }}>
-          {t.menu.split(',').map(item => (
-            <div key={item} style={{
-              background: 'rgba(255,255,255,0.15)', borderRadius: 10,
-              padding: '12px 16px', fontSize: '0.9rem', backdropFilter: 'blur(4px)'
-            }}>{item}</div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 32 }}>
-          {(['ko', 'en', 'ja', 'zh'] as const).map(l => (
-            <button key={l} onClick={() => { setLang(l); localStorage.setItem('lang', l); }} style={{
-              padding: '4px 10px', borderRadius: 'var(--radius-full)',
-              background: lang === l ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-              color: 'white', fontSize: '0.75rem', fontWeight: 700,
-              border: lang === l ? '1px solid rgba(255,255,255,0.6)' : '1px solid transparent',
-              cursor: 'pointer', transition: 'all 0.15s',
-            }}>
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </div>
+    <div className="auth-bg">
+      {/* 오로라 배경 */}
+      <div className="aurora-bg">
+        <div className="aurora-blob-center" />
       </div>
 
-      {/* 오른쪽 폼 */}
-      <div className="auth-form-side">
-        <div className="auth-form-box">
-          <div style={{ marginBottom: 32 }}>
-            <Link href="/" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 24 }}>
-              {t.back}
-            </Link>
-            <h2 className="auth-title">{t.greeting}</h2>
+      {/* 홈 링크 */}
+      <Link href="/" style={{
+        position: 'fixed', top: 24, left: 24, zIndex: 10,
+        display: 'flex', alignItems: 'center', gap: 6,
+        fontSize: '0.85rem', color: 'var(--text-muted)',
+        background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-full)', padding: '8px 16px',
+        backdropFilter: 'blur(12px)',
+        transition: 'var(--transition)',
+      }}>
+        {t.back}
+      </Link>
+
+      {/* 로그인 카드 */}
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+      >
+        <div className="glass-card-lg" style={{ padding: '40px 36px' }}>
+          {/* 로고 */}
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <motion.div
+              animate={{ rotate: [0, -5, 5, -5, 0] }}
+              transition={{ duration: 2, delay: 0.5 }}
+              style={{
+                width: 56, height: 56, borderRadius: 16,
+                background: 'linear-gradient(135deg,#FF6B35,#FF2D78,#9333EA)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1.8rem', margin: '0 auto 16px',
+                boxShadow: '0 8px 30px rgba(255,45,120,0.4)',
+              }}
+            >
+              💜
+            </motion.div>
+            <h2 className="auth-title" style={{ color: 'var(--text-primary)' }}>{t.greeting}</h2>
             <p className="auth-subtitle">{t.subtitle}</p>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* 폼 */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div className="form-group">
               <label className="form-label">{t.email}</label>
-              <input className="form-input" type="email" placeholder={t.email_ph}
-                value={email} onChange={e => setEmail(e.target.value)} required />
+              <input
+                className="form-input"
+                type="email"
+                placeholder={t.email_ph}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+                required
+                style={{
+                  boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(255,45,120,0.15)' : undefined,
+                }}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">{t.password}</label>
-              <input className="form-input" type="password" placeholder={t.pass_ph}
-                value={password} onChange={e => setPassword(e.target.value)} required />
+              <input
+                className="form-input"
+                type="password"
+                placeholder={t.pass_ph}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+                required
+                style={{
+                  boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(255,45,120,0.15)' : undefined,
+                }}
+              />
             </div>
+
             {error && (
-              <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  background: 'var(--danger-bg)', color: 'var(--danger)',
+                  border: '1px solid rgba(255,77,109,0.2)',
+                  padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                  fontSize: '0.875rem',
+                }}
+              >
                 ⚠️ {error}
-              </div>
+              </motion.div>
             )}
-            <button type="submit" className="btn btn-primary btn-full btn-lg" style={{ marginTop: 8 }} disabled={loading}>
-              {loading ? t.logging_in : t.login}
-            </button>
+
+            <motion.button
+              type="submit"
+              className="btn btn-sunset btn-full"
+              style={{ height: 52, fontSize: '1rem', marginTop: 4 }}
+              disabled={loading}
+              whileHover={!loading ? { scale: 1.01 } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
+            >
+              {loading ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="spinner" />
+                  {t.logging_in}
+                </span>
+              ) : t.login}
+            </motion.button>
           </form>
-          <div style={{ textAlign: 'center', marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <Link href="/find-id" style={{ color: 'var(--primary)', marginRight: 16 }}>{t.find_id}</Link>
-            <Link href="/reset-password" style={{ color: 'var(--primary)' }}>{t.find_pw}</Link>
+
+          {/* 부가 링크 */}
+          <div style={{ textAlign: 'center', marginTop: 14, fontSize: '0.8rem' }}>
+            <Link href="/find-id" style={{ color: 'var(--text-muted)', marginRight: 16, transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--sunset-pink)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+            >{t.find_id}</Link>
+            <Link href="/reset-password" style={{ color: 'var(--text-muted)', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--sunset-pink)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+            >{t.find_pw}</Link>
           </div>
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+
+          <div className="divider" style={{ margin: '20px 0' }} />
+
+          <div style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             {t.no_account}{' '}
-            <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>{t.signup}</Link>
+            <Link href="/signup" style={{
+              background: 'linear-gradient(135deg,#FF6B35,#FF2D78)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              fontWeight: 700,
+            }}>{t.signup}</Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

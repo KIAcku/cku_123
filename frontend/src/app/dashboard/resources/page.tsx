@@ -850,13 +850,13 @@ export default function ResourcesPage() {
         </div>
 
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px' }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: '32px', border: '1px solid #e9ecef', boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}>
-            <div style={{ fontSize: '.95rem', lineHeight: 1.9, color: '#333', whiteSpace: 'pre-line' }}>
+          <div className="glass-card" style={{ padding: '32px' }}>
+            <div style={{ fontSize: '.95rem', lineHeight: 1.9, color: 'var(--text-primary)', whiteSpace: 'pre-line' }}>
               {currentArticle.content.split('\n').map((line: string, i: number) => {
                 if (line.startsWith('## ')) return <h2 key={i} style={{ fontSize: '1.2rem', fontWeight: 700, margin: '24px 0 12px', color: currentArticle.color }}>{line.slice(3)}</h2>;
-                if (line.startsWith('### ')) return <h3 key={i} style={{ fontSize: '1rem', fontWeight: 700, margin: '20px 0 10px', color: '#1a1a2e' }}>{line.slice(4)}</h3>;
+                if (line.startsWith('### ')) return <h3 key={i} style={{ fontSize: '1rem', fontWeight: 700, margin: '20px 0 10px', color: 'var(--text-primary)' }}>{line.slice(4)}</h3>;
                 if (line.startsWith('**') && line.endsWith('**')) return <p key={i} style={{ fontWeight: 700, marginBottom: 6 }}>{line.slice(2, -2)}</p>;
-                if (line.startsWith('- ')) return <li key={i} style={{ marginLeft: 20, marginBottom: 4 }}>{line.slice(2)}</li>;
+                if (line.startsWith('- ')) return <li key={i} style={{ marginLeft: 20, marginBottom: 4, color: 'var(--text-secondary)' }}>{line.slice(2)}</li>;
                 if (line === '') return <br key={i} />;
                 return <p key={i} style={{ marginBottom: 6 }}>{line}</p>;
               })}
@@ -865,10 +865,10 @@ export default function ResourcesPage() {
 
           {/* 하단 액션 */}
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-            <button onClick={() => setSelectedArticle(null)} style={{ background: '#F8F9FA', color: '#6c757d', padding: '11px 20px', borderRadius: 10, border: '1px solid #dee2e6', cursor: 'pointer', fontWeight: 500 }}>
+            <button onClick={() => setSelectedArticle(null)} className="btn btn-glass">
               {t.list_btn}
             </button>
-            <button onClick={() => router.push('/dashboard/counsel')} style={{ background: currentArticle.color, color: 'white', padding: '11px 22px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, flex: 1 }}>
+            <button onClick={() => router.push('/dashboard/counsel')} className="btn btn-sunset btn-full">
               {t.counsel_btn}
             </button>
           </div>
@@ -880,13 +880,14 @@ export default function ResourcesPage() {
   return (
     <div>
       {/* 히어로 */}
-      <div style={{ background: 'linear-gradient(135deg, #4F8EF7 0%, #6c63ff 100%)', padding: '36px 28px', color: 'white' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ display: 'inline-block', background: 'rgba(255,255,255,.2)', borderRadius: 20, padding: '4px 14px', fontSize: 13, marginBottom: 12 }}>
+      <div style={{ background: 'var(--grad-sunset)', padding: '36px 28px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(1px)' }} />
+        <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'inline-block', background: 'rgba(255,255,255,.2)', borderRadius: 20, padding: '4px 14px', fontSize: 13, marginBottom: 12, color: 'white' }}>
             {t.hero_tag}
           </div>
-          <h2 style={{ fontSize: '1.7rem', fontWeight: 700, marginBottom: 8 }}>{t.hero_title}</h2>
-          <p style={{ opacity: .88, fontSize: '.9rem' }}>{t.hero_sub}</p>
+          <h2 style={{ fontSize: '1.7rem', fontWeight: 700, marginBottom: 8, color: 'white' }}>{t.hero_title}</h2>
+          <p style={{ opacity: .88, fontSize: '.9rem', color: 'white' }}>{t.hero_sub}</p>
         </div>
       </div>
 
@@ -895,11 +896,12 @@ export default function ResourcesPage() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={{
-              padding: '8px 16px', borderRadius: 50, fontSize: '.85rem', cursor: 'pointer',
-              border: `1.5px solid ${activeCategory === cat.id ? '#4F8EF7' : '#dee2e6'}`,
-              background: activeCategory === cat.id ? '#e8f4fd' : 'white',
-              color: activeCategory === cat.id ? '#4F8EF7' : '#495057',
-              fontWeight: activeCategory === cat.id ? 700 : 400, transition: 'all .15s'
+              padding: '8px 18px', borderRadius: 50, fontSize: '.85rem', cursor: 'pointer',
+              border: `1.5px solid ${activeCategory === cat.id ? 'var(--sunset-pink)' : 'var(--glass-border)'}`,
+              background: activeCategory === cat.id ? 'rgba(255,45,120,0.12)' : 'var(--glass-bg)',
+              color: activeCategory === cat.id ? 'var(--sunset-pink)' : 'var(--text-secondary)',
+              fontWeight: activeCategory === cat.id ? 700 : 400, transition: 'all .15s',
+              backdropFilter: 'blur(8px)',
             }}>
               {cat.icon} {cat.label}
             </button>
@@ -909,25 +911,23 @@ export default function ResourcesPage() {
         {/* 아티클 그리드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {filtered.map(article => (
-            <div key={article.id} onClick={() => setSelectedArticle(article)} style={{
-              background: 'white', borderRadius: 16, padding: '24px 22px',
-              border: '1px solid #e9ecef', cursor: 'pointer', transition: 'all .2s',
-              boxShadow: '0 1px 4px rgba(0,0,0,.04)'
-            }}
-              onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = article.color; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${article.color}18`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-              onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e9ecef'; (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(0,0,0,.04)'; (e.currentTarget as HTMLElement).style.transform = ''; }}>
+            <div key={article.id} onClick={() => setSelectedArticle(article)}
+              className="glass-card"
+              style={{ padding: '24px 22px', cursor: 'pointer' }}
+              onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = article.color; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
+              onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--glass-border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}>
               <div style={{ fontSize: '2.2rem', marginBottom: 14 }}>{article.emoji}</div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 8, lineHeight: 1.4 }}>{article.title}</div>
-              <div style={{ fontSize: '.82rem', color: '#6c757d', marginBottom: 14, lineHeight: 1.6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 8, lineHeight: 1.4, color: 'var(--text-primary)' }}>{article.title}</div>
+              <div style={{ fontSize: '.82rem', color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 {article.desc}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {article.tags.map((tag: string) => (
-                    <span key={tag} style={{ background: `${article.color}12`, color: article.color, padding: '2px 8px', borderRadius: 20, fontSize: '.72rem', fontWeight: 600 }}>#{tag}</span>
+                    <span key={tag} style={{ background: `${article.color}18`, color: article.color, padding: '2px 8px', borderRadius: 20, fontSize: '.72rem', fontWeight: 600 }}>#{tag}</span>
                   ))}
                 </div>
-                <span style={{ fontSize: '.75rem', color: '#adb5bd', flexShrink: 0 }}>
+                <span style={{ fontSize: '.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                   {t.read_time.replace('{time}', article.readTime)}
                 </span>
               </div>

@@ -377,14 +377,14 @@ export default function CommunityPage() {
           <h2 className="page-title">{t.hero_title}</h2>
           <p className="page-subtitle">{t.hero_sub}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setShowWrite(!showWrite); setSelectedPost(null); setEditingPost(null); }}>
+        <button className="btn btn-sunset" onClick={() => { setShowWrite(!showWrite); setSelectedPost(null); setEditingPost(null); }}>
           {showWrite ? t.btn_close : t.btn_write}
         </button>
       </div>
 
       {/* 글쓰기 폼 */}
       {showWrite && (
-        <div className="card" style={{ marginBottom: 24 }}>
+        <div className="glass-card" style={{ marginBottom: 24 }}>
           <h3 style={{ fontWeight: 700, marginBottom: 20 }}>{t.write_title}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="form-group">
@@ -415,8 +415,8 @@ export default function CommunityPage() {
                 value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => setShowWrite(false)}>{t.cancel}</button>
-              <button className="btn btn-primary" onClick={handleSubmitPost} disabled={loading}>
+              <button className="btn btn-glass" onClick={() => setShowWrite(false)}>{t.cancel}</button>
+              <button className="btn btn-sunset" onClick={handleSubmitPost} disabled={loading}>
                 {loading ? t.submitting : t.submit}
               </button>
             </div>
@@ -426,7 +426,7 @@ export default function CommunityPage() {
 
       {/* 글 수정 폼 */}
       {editingPost && (
-        <div className="card" style={{ marginBottom: 24, border: '2px solid var(--warning)' }}>
+        <div className="glass-card" style={{ marginBottom: 24, border: '2px solid var(--warning)' }}>
           <h3 style={{ fontWeight: 700, marginBottom: 20, color: 'var(--warning)' }}>{t.edit_title}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="form-group">
@@ -456,8 +456,8 @@ export default function CommunityPage() {
                 onChange={e => setEditForm({ ...editForm, content: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => setEditingPost(null)}>{t.cancel}</button>
-              <button className="btn btn-primary" style={{ background: 'var(--warning)' }}
+              <button className="btn btn-glass" onClick={() => setEditingPost(null)}>{t.cancel}</button>
+              <button className="btn btn-sunset" style={{ background: 'var(--warning)' }}
                 onClick={handleEditPost} disabled={loading}>
                 {loading ? t.edit_submitting : t.edit_submit}
               </button>
@@ -469,10 +469,10 @@ export default function CommunityPage() {
       <div style={{ display: 'grid', gridTemplateColumns: selectedPost ? '1fr 400px' : '1fr', gap: 24 }}>
         {/* 게시글 목록 */}
         <div>
-          <div className="tabs" style={{ marginBottom: 20 }}>
-            <button className={`tab ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setActiveCategory('all')}>{t.tab_all}</button>
+          <div className="tabs-glass" style={{ marginBottom: 20 }}>
+            <button className={`tab-glass ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setActiveCategory('all')}>{t.tab_all}</button>
             {categories.map(c => (
-              <button key={c.value} className={`tab ${activeCategory === c.value ? 'active' : ''}`}
+              <button key={c.value} className={`tab-glass ${activeCategory === c.value ? 'active' : ''}`}
                 onClick={() => setActiveCategory(c.value)}>{c.label}</button>
             ))}
           </div>
@@ -483,7 +483,7 @@ export default function CommunityPage() {
             <div className="empty-state">
               <div className="empty-icon">💬</div>
               <p>{t.empty_title}</p>
-              <button className="btn btn-primary" onClick={() => setShowWrite(true)}>{t.empty_btn}</button>
+              <button className="btn btn-sunset" onClick={() => setShowWrite(true)}>{t.empty_btn}</button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -514,7 +514,7 @@ export default function CommunityPage() {
 
         {/* 게시글 상세 */}
         {selectedPost && (
-          <div className="card" style={{ alignSelf: 'flex-start', position: 'sticky', top: 80 }}>
+          <div className="glass-card" style={{ alignSelf: 'flex-start', position: 'sticky', top: 80 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="post-meta" style={{ marginBottom: 8 }}>
@@ -548,7 +548,7 @@ export default function CommunityPage() {
                 <>
                   <button className="btn btn-sm" style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning)' }}
                     onClick={() => startEdit(selectedPost)}>{t.btn_edit}</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>{t.btn_delete}</button>
+                  <button className="btn btn-danger-glass btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>{t.btn_delete}</button>
                 </>
               )}
             </div>
@@ -586,7 +586,7 @@ export default function CommunityPage() {
               <input className="form-input" style={{ flex: 1 }} placeholder={t.comment_ph}
                 value={commentText} onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleComment()} />
-              <button className="btn btn-primary btn-sm" onClick={handleComment} disabled={loading}>{t.comment_submit}</button>
+              <button className="btn btn-sunset btn-sm" onClick={handleComment} disabled={loading}>{t.comment_submit}</button>
             </div>
           </div>
         )}

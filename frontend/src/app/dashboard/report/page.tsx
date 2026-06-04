@@ -243,7 +243,7 @@ export default function ReportPage() {
                 style={{
                   padding: '20px 16px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
                   border: `2px solid ${category === c.value ? c.color : 'var(--border)'}`,
-                  background: category === c.value ? `${c.color}10` : 'white',
+                  background: category === c.value ? `${c.color}10` : 'var(--bg-layer2)',
                   textAlign: 'center', transition: 'var(--transition)', display: 'flex',
                   flexDirection: 'column', alignItems: 'center', gap: 8
                 }}>
@@ -252,7 +252,7 @@ export default function ReportPage() {
               </button>
             ))}
           </div>
-          <button className="btn btn-primary btn-lg" disabled={!category} onClick={() => setStep(2)}>
+          <button className="btn btn-sunset btn-lg" disabled={!category} onClick={() => setStep(2)}>
             {t.next_step}
           </button>
         </div>
@@ -300,8 +300,8 @@ export default function ReportPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-secondary" onClick={() => setStep(1)}>{t.prev_step}</button>
-              <button className="btn btn-primary btn-full" onClick={handleSubmit}
+              <button className="btn btn-glass" onClick={() => setStep(1)}>{t.prev_step}</button>
+              <button className="btn btn-sunset btn-full" onClick={handleSubmit}
                 disabled={loading || !form.title || !form.content}>
                 {loading ? t.submitting : t.submit_btn}
               </button>
@@ -317,14 +317,14 @@ export default function ReportPage() {
           <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 12 }}>{t.success_title}</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>{t.success_sub}</p>
 
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px 32px', display: 'inline-block', marginBottom: 32 }}>
+          <div style={{ background: 'var(--bg-base)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: '20px 32px', display: 'inline-block', marginBottom: 32 }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>{t.receipt_no}</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em' }}>#{receiptId}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--sunset-pink)', letterSpacing: '0.1em' }}>#{receiptId}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{t.memo_receipt}</div>
           </div>
 
           <div>
-            <button className="btn btn-primary" onClick={() => { setStep(1); setCategory(''); setForm({ title: '', content: '', location: '', date: '' }); }}>
+            <button className="btn btn-sunset" onClick={() => { setStep(1); setCategory(''); setForm({ title: '', content: '', location: '', date: '' }); }}>
               {t.another_report}
             </button>
           </div>

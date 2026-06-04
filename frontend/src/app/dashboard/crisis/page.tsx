@@ -291,7 +291,7 @@ export default function CrisisPage() {
             {hotlines.map(h => (
               <a key={h.number} href={`tel:${h.number.replace(/\D/g, '')}`}
                 style={{
-                  background: 'white', borderRadius: 14, padding: '18px 20px',
+                  background: 'var(--bg-layer2)', borderRadius: 14, padding: '18px 20px',
                   border: `1px solid #e9ecef`, textDecoration: 'none',
                   display: 'flex', alignItems: 'center', gap: 14,
                   transition: 'all .2s', boxShadow: '0 1px 4px rgba(0,0,0,.04)',
@@ -316,7 +316,7 @@ export default function CrisisPage() {
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 18 }}>{t.grounding_sub}</h3>
 
           {/* 호흡법 */}
-          <div style={{ background: 'white', borderRadius: 16, padding: '24px', border: '1px solid #e9ecef', marginBottom: 16 }}>
+          <div style={{ background: 'var(--bg-layer2)', borderRadius: 16, padding: '24px', border: '1px solid #e9ecef', marginBottom: 16 }}>
             <h4 style={{ fontWeight: 700, marginBottom: 4 }}>{t.breathing_title}</h4>
             <p style={{ fontSize: '.82rem', color: '#6c757d', marginBottom: 20 }}>{t.breathing_desc}</p>
 
@@ -351,7 +351,7 @@ export default function CrisisPage() {
           </div>
 
           {/* 5-4-3-2-1 그라운딩 */}
-          <div style={{ background: 'white', borderRadius: 16, padding: '24px', border: '1px solid #e9ecef' }}>
+          <div style={{ background: 'var(--bg-layer2)', borderRadius: 16, padding: '24px', border: '1px solid #e9ecef' }}>
             <h4 style={{ fontWeight: 700, marginBottom: 4 }}>{t.grounding_sec_title}</h4>
             <p style={{ fontSize: '.82rem', color: '#6c757d', marginBottom: 20 }}>{t.grounding_sec_sub}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

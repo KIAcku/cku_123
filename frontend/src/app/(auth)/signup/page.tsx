@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/apiClient';
 
 const roles = [
-  { value: 'STUDENT', label: '학생', icon: '🎓', desc: '학업/학교생활 지원' },
-  { value: 'TEACHER', label: '선생님', icon: '👩‍🏫', desc: '학생 관리 및 모니터링' },
-  { value: 'COUNSELOR', label: '상담사', icon: '💬', desc: '전문 상담 서비스' },
+  { value: 'STUDENT', label: '학생', icon: '🎓', desc: '학업/학교생활 지원', grad: 'linear-gradient(135deg,#FF6B35,#FF2D78)' },
+  { value: 'TEACHER', label: '선생님', icon: '👩‍🏫', desc: '학생 관리 및 모니터링', grad: 'linear-gradient(135deg,#3B82F6,#6366F1)' },
+  { value: 'COUNSELOR', label: '상담사', icon: '💬', desc: '전문 상담 서비스', grad: 'linear-gradient(135deg,#9333EA,#6D28D9)' },
 ];
 
 export default function SignupPage() {
@@ -35,7 +36,6 @@ export default function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || '회원가입 실패');
-      // 자동 로그인
       const loginForm = new FormData();
       loginForm.append('username', form.email);
       loginForm.append('password', form.password);
@@ -54,51 +54,71 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="auth-layout">
-      {/* 왼쪽 패널 */}
-      <div className="auth-panel">
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>💚</div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 12 }}>마음이음</h1>
-          <p style={{ opacity: 0.85, lineHeight: 1.7 }}>함께라면 어떤 어려움도<br />극복할 수 있어요</p>
-        </div>
-        {/* 스텝 미리보기 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 260 }}>
-          {[
-            { n: 1, label: '기본 정보 입력', desc: '이메일과 비밀번호' },
-            { n: 2, label: '프로필 설정', desc: '닉네임과 역할 선택' },
-          ].map(s => (
-            <div key={s.n} style={{
-              background: step >= s.n ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
-              borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12,
-              border: step === s.n ? '1px solid rgba(255,255,255,0.5)' : '1px solid transparent',
-            }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%', background: step > s.n ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
-                color: step > s.n ? 'var(--primary)' : 'white',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0
-              }}>{step > s.n ? '✓' : s.n}</div>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{s.label}</div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.75 }}>{s.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="auth-bg">
+      <div className="aurora-bg">
+        <div className="aurora-blob-center" />
       </div>
 
-      {/* 오른쪽 폼 */}
-      <div className="auth-form-side">
-        <div className="auth-form-box">
-          <Link href="/" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 24 }}>
-            ← 홈으로
-          </Link>
+      <Link href="/" style={{
+        position: 'fixed', top: 24, left: 24, zIndex: 10,
+        display: 'flex', alignItems: 'center', gap: 6,
+        fontSize: '0.85rem', color: 'var(--text-muted)',
+        background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-full)', padding: '8px 16px',
+        backdropFilter: 'blur(12px)',
+      }}>
+        ← 홈으로
+      </Link>
 
-          {step === 1 ? (
-            <>
-              <h2 className="auth-title">계정 만들기</h2>
-              <p className="auth-subtitle">기본 정보를 입력해주세요 (1/2)</p>
-              <form onSubmit={nextStep} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+        style={{ maxWidth: 460 }}
+      >
+        <div className="glass-card-lg" style={{ padding: '40px 36px' }}>
+          {/* 로고 + 헤더 */}
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: 'linear-gradient(135deg,#FF6B35,#FF2D78,#9333EA)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.5rem', margin: '0 auto 14px',
+              boxShadow: '0 6px 24px rgba(255,45,120,0.4)',
+            }}>💜</div>
+            <h2 className="auth-title" style={{ color: 'var(--text-primary)' }}>
+              {step === 1 ? '계정 만들기' : '프로필 설정'}
+            </h2>
+            <p className="auth-subtitle">
+              {step === 1 ? '기본 정보를 입력해주세요' : '닉네임과 역할을 선택해주세요'}
+            </p>
+          </div>
+
+          {/* 스텝 인디케이터 */}
+          <div className="steps" style={{ marginBottom: 28 }}>
+            {[1, 2].map((n, i) => (
+              <div key={n} className="step-item">
+                <div className={`step-circle ${step > n ? 'done' : step === n ? 'active' : ''}`}>
+                  {step > n ? '✓' : n}
+                </div>
+                {i < 1 && <div className={`step-line ${step > n ? 'done' : ''}`} />}
+              </div>
+            ))}
+          </div>
+
+          {/* 폼 내용 */}
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.form
+                key="step1"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.25 }}
+                onSubmit={nextStep}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
                 <div className="form-group">
                   <label className="form-label">이메일</label>
                   <input className="form-input" type="email" placeholder="student@school.edu"
@@ -114,60 +134,104 @@ export default function SignupPage() {
                   <input className="form-input" type="password" placeholder="비밀번호를 다시 입력"
                     value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} required />
                 </div>
-                {error && <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>⚠️ {error}</div>}
-                <button type="submit" className="btn btn-primary btn-full btn-lg" style={{ marginTop: 8 }}>다음 단계 →</button>
-              </form>
-            </>
-          ) : (
-            <>
-              <h2 className="auth-title">프로필 설정</h2>
-              <p className="auth-subtitle">닉네임과 역할을 선택해주세요 (2/2)</p>
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {error && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid rgba(255,77,109,0.2)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
+                    ⚠️ {error}
+                  </motion.div>
+                )}
+                <motion.button type="submit" className="btn btn-sunset btn-full" style={{ height: 52, marginTop: 4 }}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  다음 단계 →
+                </motion.button>
+              </motion.form>
+            ) : (
+              <motion.form
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+                onSubmit={handleSubmit}
+                style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+              >
                 <div className="form-group">
-                  <label className="form-label">닉네임</label>
-                  <input className="form-input" type="text" placeholder="사용할 닉네임 (선택)"
+                  <label className="form-label">닉네임 (선택)</label>
+                  <input className="form-input" type="text" placeholder="사용할 닉네임"
                     value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>미입력 시 "익명학생"으로 설정됩니다</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>미입력 시 "익명학생"으로 설정됩니다</span>
                 </div>
                 <div className="form-group">
                   <label className="form-label">역할 선택</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {roles.map(r => (
-                      <div key={r.value}
+                      <motion.div
+                        key={r.value}
                         onClick={() => setForm({ ...form, role: r.value })}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                          border: `2px solid ${form.role === r.value ? 'var(--primary)' : 'var(--border)'}`,
+                          display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                          border: `1.5px solid ${form.role === r.value ? 'rgba(255,45,120,0.4)' : 'var(--glass-border)'}`,
                           borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                          background: form.role === r.value ? 'var(--primary-light)' : 'white',
-                          transition: 'var(--transition)'
+                          background: form.role === r.value ? 'rgba(255,45,120,0.08)' : 'var(--glass-bg)',
+                          backdropFilter: 'blur(8px)',
+                          transition: 'var(--transition)',
+                        }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10, background: r.grad,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '1.3rem', flexShrink: 0,
+                          boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
                         }}>
-                        <span style={{ fontSize: '1.4rem' }}>{r.icon}</span>
+                          {r.icon}
+                        </div>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: form.role === r.value ? 'var(--primary)' : 'var(--text-primary)' }}>{r.label}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{r.label}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.desc}</div>
                         </div>
-                        {form.role === r.value && <span style={{ marginLeft: 'auto', color: 'var(--primary)', fontWeight: 700 }}>✓</span>}
-                      </div>
+                        {form.role === r.value && (
+                          <span style={{
+                            marginLeft: 'auto', width: 22, height: 22,
+                            borderRadius: '50%', background: 'var(--grad-sunset)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.7rem', color: 'white', fontWeight: 700,
+                          }}>✓</span>
+                        )}
+                      </motion.div>
                     ))}
                   </div>
                 </div>
-                {error && <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>⚠️ {error}</div>}
+                {error && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid rgba(255,77,109,0.2)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
+                    ⚠️ {error}
+                  </motion.div>
+                )}
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>← 이전</button>
-                  <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                    {loading ? '처리 중...' : '가입 완료 🎉'}
-                  </button>
+                  <button type="button" className="btn btn-glass" onClick={() => setStep(1)}
+                    style={{ flexShrink: 0 }}>← 이전</button>
+                  <motion.button type="submit" className="btn btn-sunset btn-full" disabled={loading}
+                    whileHover={!loading ? { scale: 1.01 } : {}} whileTap={!loading ? { scale: 0.98 } : {}}>
+                    {loading ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="spinner" />처리 중...</span> : '가입 완료 🎉'}
+                  </motion.button>
                 </div>
-              </form>
-            </>
-          )}
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              </motion.form>
+            )}
+          </AnimatePresence>
+
+          <div className="divider" style={{ margin: '20px 0' }} />
+          <div style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             이미 계정이 있으신가요?{' '}
-            <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>로그인</Link>
+            <Link href="/login" style={{
+              background: 'linear-gradient(135deg,#FF6B35,#FF2D78)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              fontWeight: 700,
+            }}>로그인</Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

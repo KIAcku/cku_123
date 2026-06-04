@@ -149,8 +149,8 @@ export default function HelpPage() {
             onClick={() => setTab(key as any)}
             style={{
               padding: '12px 24px', fontSize: '0.9rem', fontWeight: tab === key ? 700 : 500,
-              color: tab === key ? 'var(--primary)' : 'var(--text-secondary)',
-              borderBottom: `2px solid ${tab === key ? 'var(--primary)' : 'transparent'}`,
+              color: tab === key ? 'var(--sunset-pink)' : 'var(--text-secondary)',
+              borderBottom: `2px solid ${tab === key ? 'var(--sunset-pink)' : 'transparent'}`,
               marginBottom: -2, cursor: 'pointer', background: 'transparent',
               borderTop: 'none', borderLeft: 'none', borderRight: 'none',
               transition: 'all 0.15s',
@@ -166,7 +166,7 @@ export default function HelpPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {d.faqs.map((faq, i) => (
             <div key={i} style={{
-              background: 'white', border: `1px solid ${openIndex === i ? 'var(--primary)' : 'var(--border)'}`,
+              background: 'var(--bg-layer2)', border: `1px solid ${openIndex === i ? 'var(--sunset-pink)' : 'var(--glass-border)'}`,
               borderRadius: 'var(--radius-lg)', overflow: 'hidden',
               boxShadow: openIndex === i ? '0 0 0 3px rgba(91,95,239,0.1)' : 'none',
               transition: 'all 0.2s',
@@ -182,8 +182,8 @@ export default function HelpPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{
                     width: 28, height: 28, borderRadius: 'var(--radius-full)',
-                    background: openIndex === i ? 'var(--primary)' : 'var(--primary-light)',
-                    color: openIndex === i ? 'white' : 'var(--primary)',
+                    background: openIndex === i ? 'var(--grad-sunset)' : 'rgba(255,45,120,0.1)',
+                    color: openIndex === i ? 'white' : 'var(--sunset-pink)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.75rem', fontWeight: 800, flexShrink: 0,
                   }}>Q</span>
@@ -192,7 +192,7 @@ export default function HelpPage() {
                   </span>
                 </div>
                 <span style={{
-                  fontSize: '1rem', color: 'var(--primary)',
+                  fontSize: '1rem', color: 'var(--sunset-pink)',
                   transform: openIndex === i ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s', flexShrink: 0,
                 }}>▼</span>
@@ -228,7 +228,7 @@ export default function HelpPage() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                 <div style={{
                   width: 52, height: 52, borderRadius: 'var(--radius-full)',
-                  background: 'var(--primary)', display: 'flex', alignItems: 'center',
+                  background: 'var(--grad-sunset)', display: 'flex', alignItems: 'center',
                   justifyContent: 'center', fontSize: '1.4rem',
                   boxShadow: '0 4px 12px rgba(91,95,239,0.3)',
                 }}>
@@ -238,11 +238,11 @@ export default function HelpPage() {
                   <div style={{ width: 2, flex: 1, background: 'linear-gradient(to bottom, var(--primary), transparent)', minHeight: 40, marginTop: 4 }} />
                 )}
               </div>
-              <div className="card" style={{ flex: 1, marginBottom: i < d.steps.length - 1 ? 0 : 0 }}>
+              <div className="glass-card" style={{ flex: 1, marginBottom: i < d.steps.length - 1 ? 0 : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{
                     width: 22, height: 22, borderRadius: 'var(--radius-full)',
-                    background: 'var(--primary-light)', color: 'var(--primary)',
+                    background: 'rgba(255,45,120,0.1)', color: 'var(--sunset-pink)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.7rem', fontWeight: 800,
                   }}>{i + 1}</span>
@@ -279,8 +279,8 @@ export default function HelpPage() {
               <a key={i} href={`tel:${h.number}`} style={{
                 textDecoration: 'none',
                 display: 'block',
-                background: 'white',
-                border: '1.5px solid var(--border)',
+                background: 'var(--bg-layer2)',
+                border: '1.5px solid var(--glass-border)',
                 borderRadius: 'var(--radius-xl)',
                 padding: '24px',
                 transition: 'all 0.2s ease',
@@ -292,7 +292,7 @@ export default function HelpPage() {
                   e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.borderColor = 'var(--glass-border)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}

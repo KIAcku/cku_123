@@ -241,12 +241,14 @@ export default function CounselorPage() {
     <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* 상단 배너 */}
       <div style={{
-        background: 'linear-gradient(135deg, #20c997 0%, #0891b2 100%)',
+        background: 'var(--grad-sunset)',
         padding: '16px 24px', color: 'white', flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 16
+        display: 'flex', alignItems: 'center', gap: 16,
+        position: 'relative', overflow: 'hidden'
       }}>
-        <div style={{ fontSize: '2rem' }}>👩‍💼</div>
-        <div style={{ flex: 1 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(1px)' }} />
+        <div style={{ fontSize: '2rem', position: 'relative', zIndex: 1 }}>👩‍💼</div>
+        <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: '1rem' }}>{user?.nickname || '상담사'}{t.welcome}</div>
           <div style={{ opacity: 0.85, fontSize: '0.8rem', marginTop: 2 }}>
             {t.subtitle} · 전체 {sessions.length}{t.sessions_count}
@@ -254,7 +256,8 @@ export default function CounselorPage() {
         </div>
         <button onClick={loadAllSessions} style={{
           background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
-          color: 'white', padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600
+          color: 'white', padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+          position: 'relative', zIndex: 1
         }}>{t.refresh}</button>
       </div>
 
@@ -262,17 +265,17 @@ export default function CounselorPage() {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* 왼쪽: 세션 목록 (35%) */}
         <div style={{
-          width: '35%', minWidth: 280, borderRight: '1px solid var(--border)',
+          width: '35%', minWidth: 280, borderRight: '1px solid var(--glass-border)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
-          background: 'var(--bg-subtle)'
+          background: 'var(--bg-layer1)'
         }}>
           {/* 탭 */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)', background: 'var(--bg-layer2)', flexShrink: 0 }}>
             {(['waiting', 'active', 'closed'] as const).map(tabKey => (
               <button key={tabKey} onClick={() => setTab(tabKey)} style={{
                 flex: 1, padding: '12px 8px', fontSize: '0.78rem', fontWeight: tab === tabKey ? 700 : 500,
-                borderBottom: tab === tabKey ? '2px solid #20c997' : '2px solid transparent',
-                color: tab === tabKey ? '#20c997' : 'var(--text-secondary)',
+                borderBottom: tab === tabKey ? '2px solid var(--sunset-pink)' : '2px solid transparent',
+                color: tab === tabKey ? 'var(--sunset-pink)' : 'var(--text-secondary)',
                 background: 'transparent', cursor: 'pointer', transition: 'all 0.15s',
               }}>
                 {t[tabKey]} ({sessions.filter(s => {
@@ -299,16 +302,16 @@ export default function CounselorPage() {
                   return (
                     <div key={s.id}
                       onClick={() => openSession(s)}
+                      className="glass-card-sm"
                       style={{
-                        background: isSelected ? 'white' : 'white',
-                        borderRadius: 12,
-                        padding: '14px 16px',
-                        border: `2px solid ${isSelected ? '#20c997' : 'var(--border)'}`,
-                        cursor: 'pointer', transition: 'all .18s',
-                        boxShadow: isSelected ? '0 4px 16px rgba(32,201,151,0.18)' : '0 1px 3px rgba(0,0,0,0.04)',
+                        padding: '14px 16px', marginBottom: 0,
+                        border: `2px solid ${isSelected ? 'var(--sunset-pink)' : 'var(--glass-border)'}`,
+                        cursor: 'pointer',
+                        boxShadow: isSelected ? '0 4px 16px rgba(255,45,120,0.2)' : 'none',
+                        background: isSelected ? 'rgba(255,45,120,0.06)' : 'var(--glass-bg)',
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8, color: 'var(--text-primary)' }}>
                           {s.concern}
                         </div>
                         <div style={{ background: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
@@ -321,11 +324,8 @@ export default function CounselorPage() {
                       {(s.status === 'waiting' || s.status === 'pending') && isSelected && (
                         <button
                           onClick={e => { e.stopPropagation(); assignSession(s.id); }}
-                          style={{
-                            marginTop: 10, width: '100%', padding: '7px', borderRadius: 8,
-                            background: 'linear-gradient(135deg, #20c997, #0891b2)',
-                            color: 'white', border: 'none', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
-                          }}
+                          className="btn btn-sunset"
+                          style={{ marginTop: 10, width: '100%', fontSize: '0.8rem' }}
                         >
                           ✅ {t.assign}
                         </button>
@@ -385,25 +385,26 @@ export default function CounselorPage() {
                     <div key={msg.id} style={{ display: 'flex', gap: 10, flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end' }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: '50%',
-                        background: isMe ? 'linear-gradient(135deg, #20c997, #0891b2)' : '#e9ecef',
+                        background: isMe ? 'var(--grad-sunset)' : 'var(--glass-bg-hover)',
+                        border: '1px solid var(--glass-border)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0
                       }}>
                         {isMe ? '👩‍💼' : '🙋'}
                       </div>
                       <div style={{ maxWidth: '65%' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#adb5bd', marginBottom: 4, textAlign: isMe ? 'right' : 'left', fontWeight: 600 }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4, textAlign: isMe ? 'right' : 'left', fontWeight: 600 }}>
                           {isMe ? t.me_counselor : t.student_anon}
                         </div>
                         <div style={{
                           padding: '11px 15px', borderRadius: isMe ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                          background: isMe ? 'linear-gradient(135deg, #20c997, #0891b2)' : 'white',
-                          color: isMe ? 'white' : '#1a1a2e',
+                          background: isMe ? 'var(--grad-sunset)' : 'var(--glass-bg-hover)',
+                          color: isMe ? 'white' : 'var(--text-primary)',
                           fontSize: '0.875rem', lineHeight: 1.65,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                          border: isMe ? 'none' : '1px solid #e9ecef',
+                          boxShadow: isMe ? '0 4px 15px rgba(255,45,120,0.3)' : 'none',
+                          border: isMe ? 'none' : '1px solid var(--glass-border)',
                           whiteSpace: 'pre-wrap'
                         }}>{msg.content}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#adb5bd', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>
                           {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
@@ -415,27 +416,16 @@ export default function CounselorPage() {
 
               {/* 답변 입력 */}
               {activeSession.status === 'active' && (
-                <div style={{ background: 'white', borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', gap: 10, flexShrink: 0 }}>
+                <div style={{ background: 'var(--bg-layer2)', borderTop: '1px solid var(--glass-border)', padding: '14px 16px', display: 'flex', gap: 10, flexShrink: 0 }}>
                   <textarea
-                    style={{
-                      flex: 1, border: '1.5px solid #dee2e6', borderRadius: 12,
-                      padding: '10px 14px', fontSize: '0.875rem', resize: 'none',
-                      outline: 'none', fontFamily: 'inherit', minHeight: 60, transition: 'border-color 0.15s'
-                    }}
+                    className="form-textarea"
+                    style={{ flex: 1, minHeight: 60, resize: 'none' }}
                     placeholder={t.type_reply}
                     value={reply}
                     onChange={e => setReply(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendReply(); } }}
-                    onFocus={e => e.target.style.borderColor = '#20c997'}
-                    onBlur={e => e.target.style.borderColor = '#dee2e6'}
                   />
-                  <button onClick={sendReply} disabled={loading || !reply.trim()} style={{
-                    background: 'linear-gradient(135deg, #20c997, #0891b2)',
-                    color: 'white', border: 'none', borderRadius: 12,
-                    padding: '0 20px', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
-                    opacity: !reply.trim() ? 0.5 : 1, transition: 'all .15s',
-                    display: 'flex', alignItems: 'center', gap: 6, minWidth: 80
-                  }}>
+                  <button onClick={sendReply} disabled={loading || !reply.trim()} className="btn btn-sunset">
                     {loading ? t.sending : t.send_reply}
                   </button>
                 </div>
@@ -477,15 +467,15 @@ export default function CounselorPage() {
                 <label className="form-label">{t.risk_level}</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {([
-                    { key: 'low', label: t.risk_low, color: '#16a34a', bg: '#dcfce7' },
-                    { key: 'medium', label: t.risk_medium, color: '#d97706', bg: '#fef3c7' },
-                    { key: 'high', label: t.risk_high, color: '#dc2626', bg: '#fee2e2' },
-                    { key: 'critical', label: t.risk_critical, color: '#7c3aed', bg: '#ede9fe' },
+                    { key: 'low', label: t.risk_low, color: '#16a34a', bg: 'rgba(22,163,74,0.12)' },
+                    { key: 'medium', label: t.risk_medium, color: '#d97706', bg: 'rgba(217,119,6,0.12)' },
+                    { key: 'high', label: t.risk_high, color: '#dc2626', bg: 'rgba(220,38,38,0.12)' },
+                    { key: 'critical', label: t.risk_critical, color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
                   ] as const).map(r => (
                     <button key={r.key} onClick={() => setRiskLevel(r.key)} style={{
                       padding: '8px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600,
-                      border: `2px solid ${riskLevel === r.key ? r.color : 'var(--border)'}`,
-                      background: riskLevel === r.key ? r.bg : 'white',
+                      border: `2px solid ${riskLevel === r.key ? r.color : 'var(--glass-border)'}`,
+                      background: riskLevel === r.key ? r.bg : 'var(--glass-bg)',
                       color: riskLevel === r.key ? r.color : 'var(--text-secondary)',
                       cursor: 'pointer', transition: 'all 0.15s'
                     }}>
@@ -495,12 +485,11 @@ export default function CounselorPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button className="btn btn-secondary btn-full" onClick={() => setShowReport(false)}>{t.cancel}</button>
+                <button className="btn btn-glass btn-full" onClick={() => setShowReport(false)}>{t.cancel}</button>
                 <button
-                  className="btn btn-primary btn-full"
+                  className="btn btn-sunset btn-full"
                   onClick={submitReport}
                   disabled={!reportSummary.trim()}
-                  style={{ background: 'linear-gradient(135deg, #20c997, #0891b2)' }}
                 >
                   {t.submit_report}
                 </button>

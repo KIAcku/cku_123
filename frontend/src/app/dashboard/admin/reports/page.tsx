@@ -208,7 +208,7 @@ export default function AdminReportsPage() {
       {/* Stats Cards */}
       <div className="grid-4" style={{ marginBottom: 24 }}>
         {statCards.map(card => (
-          <div key={card.label} className="card" style={{
+          <div key={card.label} className="glass-card" style={{
             display: 'flex', alignItems: 'center', gap: 16, padding: '20px 24px',
             transition: 'all 0.2s ease',
           }}
@@ -229,7 +229,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="card" style={{ marginBottom: 20, padding: '16px 20px' }}>
+      <div className="glass-card" style={{ marginBottom: 20, padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>🔽 {t.filter}</span>
 
@@ -297,7 +297,7 @@ export default function AdminReportsPage() {
           {t.loading}
         </div>
       ) : filteredReports.length === 0 ? (
-        <div className="empty-state card">
+        <div className="empty-state glass-card">
           <div className="empty-icon">📭</div>
           <p>{t.no_reports}</p>
         </div>
@@ -309,7 +309,7 @@ export default function AdminReportsPage() {
             return (
               <div key={report.id}
                 onClick={() => setSelectedReport(report)}
-                className="card card-hover"
+                className="glass-card"
                 style={{ cursor: 'pointer', padding: '20px', borderLeft: `4px solid ${cat.color}` }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>

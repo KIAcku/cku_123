@@ -256,15 +256,15 @@ export default function DiaryPage() {
       </div>
 
       {/* 탭 */}
-      <div className="tabs" style={{ marginBottom: 24 }}>
-        <button className={`tab ${activeTab === 'write' ? 'active' : ''}`} onClick={() => setActiveTab('write')}>{t.tab_write}</button>
-        <button className={`tab ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>{t.tab_list.replace('{count}', String(diaries.length))}</button>
-        <button className={`tab ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>{t.tab_calendar}</button>
+      <div className="tabs-glass" style={{ marginBottom: 24, maxWidth: 600 }}>
+        <button className={`tab-glass ${activeTab === 'write' ? 'active' : ''}`} onClick={() => setActiveTab('write')}>{t.tab_write}</button>
+        <button className={`tab-glass ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>{t.tab_list.replace('{count}', String(diaries.length))}</button>
+        <button className={`tab-glass ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>{t.tab_calendar}</button>
       </div>
 
       {activeTab === 'write' && (
-        <div className="card" style={{ maxWidth: 680 }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 20 }}>{t.write_title}</h3>
+        <div className="glass-card" style={{ maxWidth: 680, padding: 32 }}>
+          <h3 style={{ fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>{t.write_title}</h3>
 
           {/* 감정 선택 */}
           <div className="form-group" style={{ marginBottom: 20 }}>
@@ -305,7 +305,7 @@ export default function DiaryPage() {
             </div>
           </div>
 
-          <button className="btn btn-primary btn-lg btn-full" onClick={handleSubmit} disabled={loading}>
+          <button className="btn btn-sunset btn-lg btn-full" onClick={handleSubmit} disabled={loading}>
             {loading ? t.saving : t.save_btn}
           </button>
         </div>
@@ -319,7 +319,7 @@ export default function DiaryPage() {
             <div className="empty-state">
               <div className="empty-icon">📔</div>
               <p>{t.empty_title}</p>
-              <button className="btn btn-primary" onClick={() => setActiveTab('write')}>{t.empty_btn}</button>
+              <button className="btn btn-sunset" onClick={() => setActiveTab('write')}>{t.empty_btn}</button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -333,7 +333,7 @@ export default function DiaryPage() {
                     {items.map(d => {
                       const em = emotions.find(e => e.value === d.emotion);
                       return (
-                        <div key={d.id} className="card card-sm" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                        <div key={d.id} className="glass-card-sm" style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px', marginBottom: 0 }}>
                           <div style={{
                             width: 44, height: 44, borderRadius: 'var(--radius-md)',
                             background: `${em?.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -348,8 +348,8 @@ export default function DiaryPage() {
                             <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{d.content}</p>
                           </div>
                           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                            <button className="btn btn-ghost btn-sm" onClick={() => { setEditTarget(d); setShowModal(true); }}>✏️</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(d.id)}>🗑️</button>
+                            <button className="btn btn-glass btn-sm" onClick={() => { setEditTarget(d); setShowModal(true); }}>✏️</button>
+                            <button className="btn btn-danger-glass btn-sm" onClick={() => handleDelete(d.id)}>🗑️</button>
                           </div>
                         </div>
                       );
@@ -390,8 +390,8 @@ export default function DiaryPage() {
                   onChange={e => setEditTarget({ ...editTarget, content: e.target.value })} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-secondary btn-full" onClick={() => setShowModal(false)}>{t.cancel}</button>
-                <button className="btn btn-primary btn-full" onClick={handleUpdate} disabled={loading}>{t.save}</button>
+                <button className="btn btn-glass btn-full" onClick={() => setShowModal(false)}>{t.cancel}</button>
+                <button className="btn btn-sunset btn-full" onClick={handleUpdate} disabled={loading}>{t.save}</button>
               </div>
             </div>
           </div>
@@ -435,7 +435,7 @@ export default function DiaryPage() {
 
             {/* 이번 달 감정 통계 */}
             {topEmotions.length > 0 && (
-              <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, border: '1px solid var(--border)' }}>
+              <div className="glass-card-sm" style={{ padding: '16px 20px', marginBottom: 20 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10 }}>{t.month_emotions_title}</div>
                 <div style={{ display: 'flex', gap: 12 }}>
                   {topEmotions.map(([emotion, count]) => (
@@ -449,7 +449,7 @@ export default function DiaryPage() {
             )}
 
             {/* 캘린더 그리드 */}
-            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)' }}>
+            <div className="glass-card-sm" style={{ padding: 20 }}>
               {/* 요일 헤더 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
                 {t.cal_weeks.map((w: string, i: number) => (

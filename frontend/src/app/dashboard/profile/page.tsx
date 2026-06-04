@@ -270,7 +270,7 @@ export default function ProfilePage() {
       </div>
 
       {/* 프로필 헤더 카드 */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+      <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
         {/* 아바타 업로드 */}
         <div
           style={{ position: 'relative', display: 'inline-block', cursor: 'pointer', flexShrink: 0 }}
@@ -280,7 +280,7 @@ export default function ProfilePage() {
           {user?.avatar_url ? (
             <img
               src={`${BACKEND}${user.avatar_url}`}
-              style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary)', display: 'block' }}
+              style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--sunset-pink)', display: 'block' }}
               alt="profile"
             />
           ) : (
@@ -288,7 +288,7 @@ export default function ProfilePage() {
           )}
           <div style={{
             position: 'absolute', bottom: 0, right: 0,
-            background: 'var(--primary)', borderRadius: '50%',
+            background: 'var(--grad-sunset)', borderRadius: '50%',
             width: 26, height: 26, display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '0.75rem',
             boxShadow: '0 2px 6px rgba(91,95,239,0.4)'
@@ -306,7 +306,7 @@ export default function ProfilePage() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{user?.email}</p>
           <span className="badge badge-primary" style={{ marginTop: 6 }}>{roleLabel[user?.role] || '학생'}</span>
         </div>
-        <button className="btn btn-danger" onClick={handleLogout}>{t.logout}</button>
+        <button className="btn btn-danger-glass" onClick={handleLogout}>{t.logout}</button>
       </div>
 
       {/* 활동 통계 */}
@@ -328,15 +328,15 @@ export default function ProfilePage() {
       </div>
 
       {/* 탭 */}
-      <div className="tabs" style={{ marginBottom: 24 }}>
-        <button className={`tab ${activeTab === 'info' ? 'active' : ''}`} onClick={() => setActiveTab('info')}>{t.account_settings}</button>
-        <button className={`tab ${activeTab === 'diaries' ? 'active' : ''}`} onClick={() => setActiveTab('diaries')}>{t.my_diaries} ({diaries.length})</button>
+      <div className="tabs-glass" style={{ marginBottom: 24 }}>
+        <button className={`tab-glass ${activeTab === 'info' ? 'active' : ''}`} onClick={() => setActiveTab('info')}>{t.account_settings}</button>
+        <button className={`tab-glass ${activeTab === 'diaries' ? 'active' : ''}`} onClick={() => setActiveTab('diaries')}>{t.my_diaries} ({diaries.length})</button>
       </div>
 
       {activeTab === 'info' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 560 }}>
           {/* 기본 프로필 수정 */}
-          <div className="card">
+          <div className="glass-card">
             <h3 style={{ fontWeight: 700, marginBottom: 20 }}>{t.edit_profile}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="form-group">
@@ -359,14 +359,14 @@ export default function ProfilePage() {
                   <option value="ja">日本語</option>
                 </select>
               </div>
-              <button className="btn btn-primary" onClick={handleUpdate} disabled={loading}>
+              <button className="btn btn-sunset" onClick={handleUpdate} disabled={loading}>
                 {loading ? t.saving : t.save_changes}
               </button>
             </div>
           </div>
 
           {/* 비밀번호 변경 */}
-          <div className="card">
+          <div className="glass-card">
             <h3 style={{ fontWeight: 700, marginBottom: 20 }}>{t.change_password}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="form-group">
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                   {pwMsg}
                 </div>
               )}
-              <button className="btn btn-primary" onClick={handlePasswordChange}
+              <button className="btn btn-sunset" onClick={handlePasswordChange}
                 disabled={!pwData.current || !pwData.newPw || !pwData.confirm}>
                 {t.change_pw_btn}
               </button>
@@ -403,7 +403,7 @@ export default function ProfilePage() {
 
           {/* 보호자 이메일 (학생만) */}
           {isStudent && (
-            <div className="card">
+            <div className="glass-card">
               <h3 style={{ fontWeight: 700, marginBottom: 8 }}>{t.guardian_email}</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 16 }}>{t.guardian_hint}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -412,7 +412,7 @@ export default function ProfilePage() {
                     placeholder={t.guardian_ph}
                     value={guardianEmail} onChange={e => setGuardianEmail(e.target.value)} />
                 </div>
-                <button className="btn btn-secondary" onClick={handleGuardianEmailSave}>
+                <button className="btn btn-glass" onClick={handleGuardianEmailSave}>
                   {t.guardian_save}
                 </button>
               </div>
@@ -420,10 +420,10 @@ export default function ProfilePage() {
           )}
 
           {/* 위험 구역: 계정 삭제 */}
-          <div className="card" style={{ border: '1.5px solid var(--danger)' }}>
+          <div className="glass-card" style={{ border: '1.5px solid var(--danger)' }}>
             <h3 style={{ fontWeight: 700, marginBottom: 8, color: 'var(--danger)' }}>{t.danger_zone}</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 16 }}>{t.delete_hint}</p>
-            <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
+            <button className="btn btn-danger-glass" onClick={() => setShowDeleteModal(true)}>
               🗑️ {t.delete_account}
             </button>
           </div>
@@ -440,7 +440,7 @@ export default function ProfilePage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {diaries.map((d: any) => (
-                <div key={d.id} className="card card-sm" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                <div key={d.id} className="glass-card-sm" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                   <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>{emotionEmoji[d.emotion] || '😐'}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
@@ -477,9 +477,9 @@ export default function ProfilePage() {
                   value={deletePassword} onChange={e => setDeletePassword(e.target.value)} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-secondary btn-full" onClick={() => setShowDeleteModal(false)}>{t.cancel}</button>
+                <button className="btn btn-glass btn-full" onClick={() => setShowDeleteModal(false)}>{t.cancel}</button>
                 <button
-                  className="btn btn-danger btn-full"
+                  className="btn btn-danger-glass btn-full"
                   onClick={handleDeleteAccount}
                   disabled={!deletePassword}
                   style={{ background: 'var(--danger)', color: 'white' }}
