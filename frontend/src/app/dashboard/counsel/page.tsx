@@ -149,6 +149,7 @@ export default function CounselPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [toast, setToast] = useState('');
   const [onlineCounselors, setOnlineCounselors] = useState(0);
+  const [counselorList, setCounselorList] = useState<{id: string; nickname: string; is_online: boolean}[]>([]);
   const [counselTab, setCounselTab] = useState<'instant' | 'booking'>('instant');
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -168,10 +169,15 @@ export default function CounselPage() {
 
   useEffect(() => {
     loadSessions();
-    // Fetch online counselors
-    fetch(`${API}/counselors/online`, { headers: getHeaders(false) })
+    // Fetch all counselors with status
+    fetch(`${API}/counselors`, { headers: getHeaders(false) })
       .then(r => r.json())
-      .then(data => setOnlineCounselors(Array.isArray(data) ? data.length : (data?.count || 0)))
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCounselorList(data);
+          setOnlineCounselors(data.filter((c: any) => c.is_online).length);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -417,7 +423,41 @@ export default function CounselPage() {
           </div>
         ) : (
           <>
+            {/* 상담사 상태 카드 */}
+            {counselorList.length > 0 && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#4F8EF7', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>상담사 현황</div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {counselorList.map(c => (
+                    <div key={c.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      background: c.is_online ? 'rgba(74,222,128,0.08)' : 'rgba(0,0,0,0.04)',
+                      border: `1.5px solid ${c.is_online ? 'rgba(74,222,128,0.35)' : '#e9ecef'}`,
+                      borderRadius: 50, padding: '7px 16px',
+                    }}>
+                      <span style={{ fontSize: '1.1rem' }}>👩‍💼</span>
+                      <span style={{ fontSize: '.83rem', fontWeight: 600 }}>{c.nickname}</span>
+                      <span style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        fontSize: '.72rem', fontWeight: 700,
+                        color: c.is_online ? '#16a34a' : '#9ca3af',
+                      }}>
+                        <span style={{
+                          width: 6, height: 6, borderRadius: '50%',
+                          background: c.is_online ? '#4ade80' : '#9ca3af',
+                          display: 'inline-block',
+                          boxShadow: c.is_online ? '0 0 5px #4ade80' : 'none',
+                        }} />
+                        {c.is_online ? '온라인' : '오프라인'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 이용 방법 */}
+
             <div style={{ marginBottom: 36 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#4F8EF7', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6 }}>이용 방법</div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20 }}>{t.how_title}</h3>

@@ -114,6 +114,8 @@ export default function CounselorPage() {
   const [showReport, setShowReport] = useState(false);
   const [reportSummary, setReportSummary] = useState('');
   const [riskLevel, setRiskLevel] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
+  const [isOnline, setIsOnline] = useState(false);
+  const [onlineLoading, setOnlineLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const t = i18n[lang] || i18n.ko;
@@ -133,6 +135,31 @@ export default function CounselorPage() {
     }
     loadAllSessions();
   }, []);
+
+  // 온라인 상태 heartbeat — 30초마다 유지
+  useEffect(() => {
+    if (!isOnline) return;
+    const beat = setInterval(async () => {
+      try {
+        await fetch(`${API}/counselors/me/heartbeat`, { method: 'POST', headers: getHeaders(false) });
+      } catch {}
+    }, 30000);
+    return () => clearInterval(beat);
+  }, [isOnline]);
+
+  const toggleOnline = async () => {
+    setOnlineLoading(true);
+    try {
+      const endpoint = isOnline ? '/counselors/me/offline' : '/counselors/me/online';
+      const res = await fetch(`${API}${endpoint}`, { method: 'POST', headers: getHeaders(false) });
+      if (res.ok) {
+        const data = await res.json();
+        setIsOnline(data.is_online);
+        showToast(data.is_online ? '🟢 온라인 상태로 변경됐습니다' : '⚫ 오프라인 상태로 변경됐습니다');
+      }
+    } catch {}
+    setOnlineLoading(false);
+  };
 
   // Poll messages every 5 seconds
   useEffect(() => {
@@ -260,7 +287,28 @@ export default function CounselorPage() {
           color: 'white', padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
           position: 'relative', zIndex: 1
         }}>{t.refresh}</button>
+        {/* 온라인 상태 토글 */}
+        <button
+          onClick={toggleOnline}
+          disabled={onlineLoading}
+          style={{
+            background: isOnline ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.15)',
+            border: `1px solid ${isOnline ? 'rgba(74,222,128,0.6)' : 'rgba(255,255,255,0.3)'}`,
+            color: 'white', padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
+            fontSize: '0.8rem', fontWeight: 700, position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s',
+          }}
+        >
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: isOnline ? '#4ade80' : 'rgba(255,255,255,0.5)',
+            display: 'inline-block',
+            boxShadow: isOnline ? '0 0 6px #4ade80' : 'none',
+          }} />
+          {onlineLoading ? '...' : isOnline ? '온라인' : '오프라인'}
+        </button>
       </div>
+
 
       {/* 메인 스플릿 패널 */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

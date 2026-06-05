@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLangStore } from '@/store/langStore';
 import { useThemeStore } from '@/store/themeStore';
+import NoticePopup from '@/components/NoticePopup';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 const BACKEND_BASE = API.replace('/api/v1', '');
@@ -379,6 +380,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               🆘 위기
             </button>
 
+            {/* 공지사항 팝업 */}
+            <NoticePopup lang={lang} />
+
             {/* 언어 선택 */}
             <div style={{ position: 'relative' }}>
               <button
@@ -396,6 +400,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       position: 'absolute', right: 0, top: 46,
                       background: 'var(--bg-layer3)',
