@@ -15,11 +15,8 @@ const applyTheme = (theme: Theme) => {
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => {
-  // 초기값: localStorage 또는 기본 dark
-  const initial: Theme =
-    typeof window !== 'undefined'
-      ? ((localStorage.getItem('theme') as Theme) || 'dark')
-      : 'dark';
+  // 초기값: 서버와 첫 렌더링 동일하게 'dark'로 고정
+  const initial: Theme = 'dark';
 
   // 즉시 적용
   if (typeof document !== 'undefined') {

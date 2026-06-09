@@ -162,6 +162,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!token) { router.push('/login'); return; }
     const u = localStorage.getItem('user');
     if (u) setUser(JSON.parse(u));
+    
+    // 로컬 스토리지에 저장된 테마 복원
+    const savedTheme = (localStorage.getItem('theme') as 'dark' | 'light') || 'dark';
+    useThemeStore.getState().setTheme(savedTheme);
+
     const savedLang = localStorage.getItem('lang') || 'ko';
     setLang(savedLang);
   }, []);
@@ -350,7 +355,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="top-header">
           <div>
             <h1 className="header-title">{pageTitle}</h1>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{dateStr}</p>
+            <p suppressHydrationWarning style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{dateStr}</p>
           </div>
           <div className="header-actions">
 

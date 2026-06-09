@@ -45,56 +45,39 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 from sqlalchemy import text
 
+def check_and_add_columns(sync_conn):
+    from sqlalchemy import inspect
+    inspector = inspect(sync_conn)
+    
+    def add_column_if_missing(table_name, column_name, col_type_sql):
+        try:
+            columns = [c['name'] for c in inspector.get_columns(table_name)]
+            if column_name not in columns:
+                sync_conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {col_type_sql};"))
+        except Exception as e:
+            print(f"Migration error ({table_name} {column_name}): {e}")
+            
+    # users 테이블 누락 컬럼 패치
+    add_column_if_missing("users", "avatar_url", "VARCHAR")
+    add_column_if_missing("users", "is_online", "BOOLEAN DEFAULT FALSE")
+    add_column_if_missing("users", "last_seen_at", "TIMESTAMP")
+    add_column_if_missing("users", "guardian_email", "VARCHAR")
+
+    # posts 테이블 누락 컬럼 패치
+    add_column_if_missing("posts", "author_nickname", "VARCHAR(100) DEFAULT '익명'")
+    add_column_if_missing("posts", "category", "VARCHAR(50) DEFAULT 'general'")
+    add_column_if_missing("posts", "likes", "INTEGER DEFAULT 0")
+    add_column_if_missing("posts", "updated_at", "TIMESTAMP")
+
+    # comments 테이블 누락 컬럼 패치
+    add_column_if_missing("comments", "author_nickname", "VARCHAR(100) DEFAULT '익명'")
+    add_column_if_missing("comments", "likes", "INTEGER DEFAULT 0")
+
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
-        # PostgreSQL/SQLite에 누락된 새 User 컬럼들을 동적으로 추가 (마이그레이션 대용)
-        try:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR;"))
-        except Exception as e: 
-            print(f"Migration error (avatar_url): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE;"))
-        except Exception as e: 
-            print(f"Migration error (is_online): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE;"))
-        except Exception as e: 
-            print(f"Migration error (last_seen_at): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_email VARCHAR;"))
-        except Exception as e: 
-            print(f"Migration error (guardian_email): {e}")
-
-        # posts 테이블 누락 컬럼 자동 패치
-        try:
-            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_nickname VARCHAR(100) DEFAULT '익명';"))
-        except Exception as e: 
-            print(f"Migration error (posts author_nickname): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'general';"))
-        except Exception as e: 
-            print(f"Migration error (posts category): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;"))
-        except Exception as e: 
-            print(f"Migration error (posts likes): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;"))
-        except Exception as e: 
-            print(f"Migration error (posts updated_at): {e}")
-
-        # comments 테이블 누락 컬럼 자동 패치
-        try:
-            await conn.execute(text("ALTER TABLE comments ADD COLUMN IF NOT EXISTS author_nickname VARCHAR(100) DEFAULT '익명';"))
-        except Exception as e: 
-            print(f"Migration error (comments author_nickname): {e}")
-        try:
-            await conn.execute(text("ALTER TABLE comments ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;"))
-        except Exception as e: 
-            print(f"Migration error (comments likes): {e}")
+        await conn.run_sync(check_and_add_columns)
 
 # 라우터 등록
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["인증"])

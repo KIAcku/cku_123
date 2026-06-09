@@ -738,24 +738,40 @@ img { max-width: 100%; }
 /* ===== 커뮤니티 페이지 반응형 그리드 ===== */
 .community-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 .community-grid.detail-open {
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: minmax(0, 1fr) 420px;
 }
 @media (max-width: 1024px) {
   .community-grid.detail-open {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-/* ===== 커뮤니티 상세 카드 반응형 모달화 ===== */
+/* ===== 커뮤니티 상세 카드 반응형 레이아웃 ===== */
+/* PC (1024px 초과): 우측 사이드바 고정(Sticky) 스타일 */
 .detail-sidebar-wrapper {
-  align-self: flex-start;
   position: sticky;
   top: 80px;
+  align-self: flex-start;
+  width: 100%;
+  z-index: 10;
 }
+.detail-sidebar-card {
+  background: var(--bg-layer2) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-2xl) !important;
+  padding: 28px 32px !important;
+  width: 100% !important;
+  max-height: calc(100vh - 120px) !important;
+  overflow-y: auto !important;
+  box-shadow: var(--glass-shadow) !important;
+  position: relative !important;
+}
+
+/* Mobile/Tablet (1024px 이하): 화면 중앙 모달 팝업 스타일 */
 @media (max-width: 1024px) {
   .detail-sidebar-wrapper {
     position: fixed;
@@ -770,17 +786,9 @@ img { max-width: 100%; }
     padding: 24px;
   }
   .detail-sidebar-card {
-    background: var(--bg-layer2) !important;
-    border: 1px solid var(--glass-border) !important;
-    border-radius: var(--radius-2xl) !important;
-    padding: 28px 32px !important;
-    width: 100% !important;
-    max-width: 540px !important;
+    max-width: 580px !important;
     max-height: 90vh !important;
-    overflow-y: auto !important;
-    box-shadow: var(--glass-shadow) !important;
     animation: modalIn 0.25s var(--ease-spring) !important;
-    position: static !important;
   }
 }
 

@@ -513,7 +513,18 @@ export default function CommunityPage() {
                     {p.updated_at && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({lang === 'ko' ? '수정됨' : lang === 'ja' ? '修正済み' : lang === 'zh' ? '已修改' : 'Edited'})</span>}
                   </div>
                   <h4 style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 6 }}>{p.title}</h4>
-                  <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.content}</p>
+                  <p style={{
+                    fontSize: '0.825rem',
+                    color: 'var(--text-secondary)',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-all',
+                    lineHeight: '1.5'
+                  }}>{p.content}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     <span style={{ color: likedPosts.has(p.id) ? '#e74c3c' : undefined }}>
                       {likedPosts.has(p.id) ? '❤️' : '🤍'} {p.likes}
@@ -546,7 +557,14 @@ export default function CommunityPage() {
                 <button className="modal-close" onClick={() => { setSelectedPost(null); setEditingPost(null); }}>✕</button>
               </div>
 
-              <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selectedPost.content}</p>
+              <p style={{
+                fontSize: '0.875rem',
+                lineHeight: 1.7,
+                color: 'var(--text-primary)',
+                marginBottom: 16,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all'
+              }}>{selectedPost.content}</p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                 <button
