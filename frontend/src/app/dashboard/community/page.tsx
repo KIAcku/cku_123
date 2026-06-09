@@ -239,28 +239,42 @@ export default function CommunityPage() {
 
   const loadPosts = async () => {
     setFetching(true);
-    const url = activeCategory === 'all'
-      ? `${API_BASE}/posts`
-      : `${API_BASE}/posts?category=${activeCategory}`;
-    const res = await fetch(url);
-    if (res.ok) setPosts(await res.json());
-    setFetching(false);
+    try {
+      const url = activeCategory === 'all'
+        ? `${API_BASE}/posts`
+        : `${API_BASE}/posts?category=${activeCategory}`;
+      const res = await fetch(url);
+      if (res.ok) setPosts(await res.json());
+    } catch (err) {
+      console.error('Error loading posts:', err);
+    } finally {
+      setFetching(false);
+    }
   };
 
   const loadComments = async (postId: string) => {
-    const res = await fetch(`${API_BASE}/posts/${postId}/comments`);
-    if (res.ok) setComments(await res.json());
+    try {
+      const res = await fetch(`${API_BASE}/posts/${postId}/comments`);
+      if (res.ok) setComments(await res.json());
+    } catch (err) {
+      console.error('Error loading comments:', err);
+      setComments([]);
+    }
   };
 
   const checkLiked = async (postId: string) => {
-    const res = await fetch(`${API_BASE}/posts/${postId}/liked`, { headers: authHeaders(false) });
-    if (res.ok) {
-      const data = await res.json();
-      setLikedPosts(prev => {
-        const next = new Set(prev);
-        if (data.liked) next.add(postId); else next.delete(postId);
-        return next;
-      });
+    try {
+      const res = await fetch(`${API_BASE}/posts/${postId}/liked`, { headers: authHeaders(false) });
+      if (res.ok) {
+        const data = await res.json();
+        setLikedPosts(prev => {
+          const next = new Set(prev);
+          if (data.liked) next.add(postId); else next.delete(postId);
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error('Error checking liked status:', err);
     }
   };
 
@@ -466,7 +480,7 @@ export default function CommunityPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedPost ? '1fr 400px' : '1fr', gap: 24 }}>
+      <div className={`community-grid ${selectedPost ? 'detail-open' : ''}`}>
         {/* 게시글 목록 */}
         <div>
           <div className="tabs-glass" style={{ marginBottom: 20 }}>

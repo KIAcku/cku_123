@@ -20,7 +20,7 @@ const i18n: Record<string, Record<string, string>> = {
     logout: '로그아웃', student: '학생', teacher: '선생님', counselor: '상담사',
     report_mgmt: '신고 관리', counsel_reports: '상담 보고서',
     statistics: '통계', students: '학생 목록', notices: '공지 관리',
-    counsel_mgmt: '상담 관리', help: '도움말',
+    counsel_mgmt: '상담 관리', help: '도움말', sys_settings: '시스템 설정',
   },
   en: {
     home: 'Home', diary: 'Emotion Diary', test: 'Self-Check',
@@ -30,7 +30,7 @@ const i18n: Record<string, Record<string, string>> = {
     logout: 'Logout', student: 'Student', teacher: 'Teacher', counselor: 'Counselor',
     report_mgmt: 'Reports', counsel_reports: 'Counsel Reports',
     statistics: 'Statistics', students: 'Students', notices: 'Notices',
-    counsel_mgmt: 'Counseling', help: 'Help',
+    counsel_mgmt: 'Counseling', help: 'Help', sys_settings: 'Settings',
   },
   ja: {
     home: 'ホーム', diary: '感情日記', test: '自己診断',
@@ -40,7 +40,7 @@ const i18n: Record<string, Record<string, string>> = {
     logout: 'ログアウト', student: '学生', teacher: '先生', counselor: 'カウンセラー',
     report_mgmt: '通報管理', counsel_reports: '相談報告',
     statistics: '統計', students: '学生一覧', notices: 'お知らせ',
-    counsel_mgmt: '相談管理', help: 'ヘルプ',
+    counsel_mgmt: '相談管理', help: 'ヘルプ', sys_settings: 'システム設定',
   },
   zh: {
     home: '首页', diary: '情绪日记', test: '自评',
@@ -50,7 +50,7 @@ const i18n: Record<string, Record<string, string>> = {
     logout: '退出', student: '学生', teacher: '教师', counselor: '咨询师',
     report_mgmt: '举报管理', counsel_reports: '咨询报告',
     statistics: '统计', students: '学生列表', notices: '公告',
-    counsel_mgmt: '咨询管理', help: '帮助',
+    counsel_mgmt: '咨询管理', help: '帮助', sys_settings: '系统设置',
   },
 };
 
@@ -83,6 +83,7 @@ const getNavSections = (t: Record<string, string>) => [
     label: t.settings,
     items: [
       { href: '/dashboard/profile',   icon: '👤', label: t.profile },
+      { href: '/dashboard/settings',  icon: '⚙️', label: t.sys_settings },
     ]
   }
 ];
@@ -98,6 +99,7 @@ const getCounselorSections = (t: Record<string, string>) => [
       { href: '/dashboard/crisis',      icon: '🆘', label: t.crisis },
       { href: '/dashboard/help',        icon: '❓', label: t.help },
       { href: '/dashboard/profile',     icon: '👤', label: t.profile },
+      { href: '/dashboard/settings',    icon: '⚙️', label: t.sys_settings },
     ]
   }
 ];
@@ -113,15 +115,9 @@ const getTeacherSections = (t: Record<string, string>) => [
       { href: '/dashboard/admin/students',         icon: '👥', label: t.students },
       { href: '/dashboard/admin/notices',          icon: '📢', label: t.notices },
       { href: '/dashboard/profile',                icon: '👤', label: t.profile },
+      { href: '/dashboard/settings',               icon: '⚙️', label: t.sys_settings },
     ]
   }
-];
-
-const langs = [
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
 
 const roleLabel = (lang: string, role: string) => {
@@ -147,6 +143,7 @@ const pageTitleMap = (t: Record<string, string>): Record<string, string> => ({
   '/dashboard/admin/students': t.students,
   '/dashboard/admin/notices': t.notices,
   '/dashboard/help': t.help,
+  '/dashboard/settings': t.sys_settings,
 });
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -155,7 +152,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { lang, setLang } = useLangStore();
   const { theme, toggleTheme } = useThemeStore();
   const [user, setUser] = useState<any>(null);
-  const [showLang, setShowLang] = useState(false);
   const [unread, setUnread] = useState({ messages: 0, reports: 0, alerts: 0 });
   const [sidebarHovered, setSidebarHovered] = useState(false);
 
@@ -184,12 +180,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [user]);
-
-  const switchLang = (code: string) => {
-    setLang(code);
-    localStorage.setItem('lang', code);
-    setShowLang(false);
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -383,54 +373,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* 공지사항 팝업 */}
             <NoticePopup lang={lang} />
 
-            {/* 언어 선택 */}
-            <div style={{ position: 'relative' }}>
-              <button
-                className="header-icon-btn"
-                onClick={() => setShowLang(!showLang)}
-                title="언어 선택"
-                style={{ fontSize: '0.75rem', fontWeight: 700, width: 'auto', padding: '0 10px', gap: 4 }}
-              >
-                {langs.find(l => l.code === lang)?.flag} {lang.toUpperCase()}
-              </button>
-              <AnimatePresence>
-                {showLang && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      position: 'absolute', right: 0, top: 46,
-                      background: 'var(--bg-layer3)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-lg)',
-                      backdropFilter: 'blur(24px)',
-                      zIndex: 300, minWidth: 150,
-                      overflow: 'hidden',
-                      boxShadow: 'var(--glass-shadow)',
-                    }}
-                  >
-                    {langs.map((l) => (
-                      <button key={l.code} onClick={() => switchLang(l.code)} style={{
-                        width: '100%', padding: '10px 16px',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        fontSize: '0.85rem', cursor: 'pointer', border: 'none',
-                        background: lang === l.code ? 'var(--glass-bg-active)' : 'transparent',
-                        color: lang === l.code ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        fontWeight: lang === l.code ? 700 : 400,
-                        fontFamily: 'inherit',
-                        transition: 'var(--transition)',
-                        borderBottom: '1px solid var(--glass-border)',
-                      }}>
-                        {l.flag} {l.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* 설정 바로가기 */}
+            <button
+              className="header-icon-btn"
+              onClick={() => router.push('/dashboard/settings')}
+              title={t.sys_settings}
+            >
+              ⚙️
+            </button>
 
             {/* 다크/라이트 토글 */}
             <button
@@ -473,14 +423,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
-
-      {/* 드롭다운 외부 클릭 닫기 */}
-      {showLang && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 250 }}
-          onClick={() => setShowLang(false)}
-        />
-      )}
     </div>
   );
 }
