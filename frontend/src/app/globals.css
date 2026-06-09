@@ -750,6 +750,40 @@ img { max-width: 100%; }
   }
 }
 
+/* ===== 커뮤니티 상세 카드 반응형 모달화 ===== */
+.detail-sidebar-wrapper {
+  align-self: flex-start;
+  position: sticky;
+  top: 80px;
+}
+@media (max-width: 1024px) {
+  .detail-sidebar-wrapper {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .detail-sidebar-card {
+    background: var(--bg-layer2) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-2xl) !important;
+    padding: 28px 32px !important;
+    width: 100% !important;
+    max-width: 540px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    box-shadow: var(--glass-shadow) !important;
+    animation: modalIn 0.25s var(--ease-spring) !important;
+    position: static !important;
+  }
+}
+
 /* ===== 커뮤니티 포스트 카드 ===== */
 .post-card {
   background: var(--glass-bg);

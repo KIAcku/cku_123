@@ -528,79 +528,81 @@ export default function CommunityPage() {
 
         {/* 게시글 상세 */}
         {selectedPost && (
-          <div className="glass-card" style={{ alignSelf: 'flex-start', position: 'sticky', top: 80 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="post-meta" style={{ marginBottom: 8 }}>
-                  <span className="badge" style={{ background: `${catColor(selectedPost.category)}18`, color: catColor(selectedPost.category), fontSize: '0.72rem' }}>{catLabel(selectedPost.category)}</span>
-                  <span>{selectedPost.author_nickname}</span>
+          <div className="detail-sidebar-wrapper" onClick={() => setSelectedPost(null)}>
+            <div className="glass-card detail-sidebar-card" onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="post-meta" style={{ marginBottom: 8 }}>
+                    <span className="badge" style={{ background: `${catColor(selectedPost.category)}18`, color: catColor(selectedPost.category), fontSize: '0.72rem' }}>{catLabel(selectedPost.category)}</span>
+                    <span>{selectedPost.author_nickname}</span>
+                  </div>
+                  <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>{selectedPost.title}</h3>
+                  {selectedPost.updated_at && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                      {lang === 'ko' ? '수정됨' : lang === 'ja' ? '修正済み' : lang === 'zh' ? '已修改' : 'Edited'}: {new Date(selectedPost.updated_at).toLocaleString(lang === 'ko' ? 'ko-KR' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'en-US')}
+                    </p>
+                  )}
                 </div>
-                <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>{selectedPost.title}</h3>
-                {selectedPost.updated_at && (
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                    {lang === 'ko' ? '수정됨' : lang === 'ja' ? '修正済み' : lang === 'zh' ? '已修改' : 'Edited'}: {new Date(selectedPost.updated_at).toLocaleString(lang === 'ko' ? 'ko-KR' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'en-US')}
-                  </p>
+                <button className="modal-close" onClick={() => { setSelectedPost(null); setEditingPost(null); }}>✕</button>
+              </div>
+
+              <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selectedPost.content}</p>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+                <button
+                  className="btn btn-sm btn-outline"
+                  onClick={() => handleLike(selectedPost.id)}
+                  style={{
+                    color: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
+                    borderColor: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
+                  }}
+                >
+                  {likedPosts.has(selectedPost.id) ? '❤️' : '🤍'} {selectedPost.likes}
+                </button>
+                {selectedPost.user_id === myId && (
+                  <>
+                    <button className="btn btn-sm" style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning)' }}
+                      onClick={() => startEdit(selectedPost)}>{t.btn_edit}</button>
+                    <button className="btn btn-danger-glass btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>{t.btn_delete}</button>
+                  </>
                 )}
               </div>
-              <button className="modal-close" onClick={() => { setSelectedPost(null); setEditingPost(null); }}>✕</button>
-            </div>
 
-            <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selectedPost.content}</p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-              <button
-                className="btn btn-sm btn-outline"
-                onClick={() => handleLike(selectedPost.id)}
-                style={{
-                  color: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
-                  borderColor: likedPosts.has(selectedPost.id) ? '#e74c3c' : undefined,
-                }}
-              >
-                {likedPosts.has(selectedPost.id) ? '❤️' : '🤍'} {selectedPost.likes}
-              </button>
-              {selectedPost.user_id === myId && (
-                <>
-                  <button className="btn btn-sm" style={{ background: 'var(--warning-light)', color: 'var(--warning)', border: '1px solid var(--warning)' }}
-                    onClick={() => startEdit(selectedPost)}>{t.btn_edit}</button>
-                  <button className="btn btn-danger-glass btn-sm" onClick={() => handleDeletePost(selectedPost.id)}>{t.btn_delete}</button>
-                </>
-              )}
-            </div>
-
-            {/* 댓글 */}
-            <h4 style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 12 }}>{t.comment_count.replace('{count}', String(comments.length))}</h4>
-            <div style={{ maxHeight: 260, overflowY: 'auto', marginBottom: 14 }}>
-              {comments.length === 0 ? (
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>{t.comment_empty}</p>
-              ) : comments.map(c => (
-                <div key={c.id} className="comment-item">
-                  <div className="avatar avatar-sm">{c.author_nickname?.slice(0, 1) || '익'}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{c.author_nickname}</span>
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        <button
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
-                          onClick={() => handleLikeComment(selectedPost.id, c.id)}
-                        >🤍 {c.likes || 0}</button>
-                        {c.user_id === myId && (
-                          <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: '0.72rem' }}
-                            onClick={() => handleDeleteComment(selectedPost.id, c.id)}>{t.comment_delete}</button>
-                        )}
+              {/* 댓글 */}
+              <h4 style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 12 }}>{t.comment_count.replace('{count}', String(comments.length))}</h4>
+              <div style={{ maxHeight: 260, overflowY: 'auto', marginBottom: 14 }}>
+                {comments.length === 0 ? (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>{t.comment_empty}</p>
+                ) : comments.map(c => (
+                  <div key={c.id} className="comment-item">
+                    <div className="avatar avatar-sm">{c.author_nickname?.slice(0, 1) || '익'}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{c.author_nickname}</span>
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                          <button
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                            onClick={() => handleLikeComment(selectedPost.id, c.id)}
+                          >🤍 {c.likes || 0}</button>
+                          {c.user_id === myId && (
+                            <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: '0.72rem' }}
+                              onClick={() => handleDeleteComment(selectedPost.id, c.id)}>{t.comment_delete}</button>
+                          )}
+                        </div>
                       </div>
+                      <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: 3 }}>{c.content}</p>
                     </div>
-                    <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: 3 }}>{c.content}</p>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* 댓글 입력 */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input className="form-input" style={{ flex: 1 }} placeholder={t.comment_ph}
-                value={commentText} onChange={e => setCommentText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleComment()} />
-              <button className="btn btn-sunset btn-sm" onClick={handleComment} disabled={loading}>{t.comment_submit}</button>
+              {/* 댓글 입력 */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input className="form-input" style={{ flex: 1 }} placeholder={t.comment_ph}
+                  value={commentText} onChange={e => setCommentText(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleComment()} />
+                <button className="btn btn-sunset btn-sm" onClick={handleComment} disabled={loading}>{t.comment_submit}</button>
+              </div>
             </div>
           </div>
         )}
