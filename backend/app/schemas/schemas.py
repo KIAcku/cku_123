@@ -60,6 +60,7 @@ class PostCreate(BaseModel):
     title: str
     content: str
     category: str = "general"
+    image_url: Optional[str] = None
 
 class PostResponse(BaseModel):
     id: str
@@ -69,6 +70,7 @@ class PostResponse(BaseModel):
     content: str
     category: Optional[str] = "general"
     likes: Optional[int] = 0
+    image_url: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

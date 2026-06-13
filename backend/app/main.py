@@ -73,6 +73,10 @@ def check_and_add_columns(sync_conn):
     add_column_if_missing("comments", "author_nickname", "VARCHAR(100) DEFAULT '익명'")
     add_column_if_missing("comments", "likes", "INTEGER DEFAULT 0")
 
+    # image_url 컬럼 패치
+    add_column_if_missing("posts", "image_url", "VARCHAR(500)")
+    add_column_if_missing("counsel_messages", "image_url", "VARCHAR(500)")
+
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:

@@ -15,6 +15,7 @@ class Post(Base):
     likes = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=True)
+    image_url = Column(String(500), nullable=True)
 
 class Comment(Base):
     __tablename__ = "comments"

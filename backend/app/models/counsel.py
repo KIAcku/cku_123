@@ -35,6 +35,7 @@ class CounselMessage(Base):
     session_id = Column(String, ForeignKey("counsel_sessions.id"), nullable=False)
     sender_role = Column(String, default="user")  # 'user' or 'counselor'
     content = Column(Text, nullable=False)
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

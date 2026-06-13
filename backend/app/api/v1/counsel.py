@@ -6,12 +6,14 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 import json
+import asyncio
 
 from app.core.database import get_db
 from app.models.counsel import TestResult, CounselSession, CounselMessage
 from app.models.alert import AlertLog
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.core.supabase_client import broadcast_message, send_notification
 
 router = APIRouter()
 
@@ -49,12 +51,14 @@ class SessionOut(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str
+    image_url: Optional[str] = None
 
 class MessageOut(BaseModel):
     id: str
     session_id: str
     sender_role: str
     content: str
+    image_url: Optional[str] = None
     created_at: datetime
     class Config: from_attributes = True
 
@@ -123,19 +127,28 @@ async def create_session(
 
     # 첫 인사 메시지
     concern_text = data.concern.replace("[", "").replace("]", "")
+    greeting_content = (
+        f"안녕하세요! 저는 마음이음 상담사예요 😊\n\n"
+        f"오늘 '{concern_text}'에 대해 이야기해주시겠다고 하셨군요.\n"
+        f"먼저 용기 내어 상담을 신청해주셔서 정말 감사해요.\n\n"
+        f"여기서는 어떤 이야기를 해도 절대 판단하지 않아요. 💙\n"
+        f"천천히, 편하게 이야기해주세요. 오늘 어떤 마음으로 오셨는지 들려주실 수 있나요?"
+    )
     greeting = CounselMessage(
         session_id=session.id,
         sender_role="counselor",
-        content=(
-            f"안녕하세요! 저는 마음이음 상담사예요 😊\n\n"
-            f"오늘 '{concern_text}'에 대해 이야기해주시겠다고 하셨군요.\n"
-            f"먼저 용기 내어 상담을 신청해주셔서 정말 감사해요.\n\n"
-            f"여기서는 어떤 이야기를 해도 절대 판단하지 않아요. 💙\n"
-            f"천천히, 편하게 이야기해주세요. 오늘 어떤 마음으로 오셨는지 들려주실 수 있나요?"
-        ),
+        content=greeting_content,
     )
     db.add(greeting)
     await db.commit()
+
+    # Supabase Realtime에 인사 메시지 broadcast (fire-and-forget)
+    asyncio.create_task(broadcast_message(
+        session_id=session.id,
+        sender_role="counselor",
+        content=greeting_content,
+    ))
+
     return session
 
 @router.get("/sessions", response_model=List[SessionOut])
@@ -184,6 +197,7 @@ async def send_message(
         session_id=session_id,
         sender_role="user",
         content=data.content,
+        image_url=data.image_url,
     )
     db.add(user_msg)
 
@@ -195,6 +209,14 @@ async def send_message(
             break
 
     await db.commit()
+
+    # Supabase Realtime broadcast (fire-and-forget)
+    asyncio.create_task(broadcast_message(
+        session_id=session_id,
+        sender_role="user",
+        content=data.content,
+        image_url=data.image_url,
+    ))
 
     res = await db.execute(
         select(CounselMessage).where(CounselMessage.session_id == session_id)
@@ -268,10 +290,27 @@ async def counselor_reply(
         session_id=session_id,
         sender_role="counselor",
         content=data.content,
+        image_url=data.image_url,
     )
     db.add(msg)
     await db.commit()
     await db.refresh(msg)
+
+    # Supabase Realtime broadcast + 학생에게 알림
+    asyncio.create_task(broadcast_message(
+        session_id=session_id,
+        sender_role="counselor",
+        content=data.content,
+        image_url=data.image_url,
+    ))
+    asyncio.create_task(send_notification(
+        user_id=str(session.user_id),
+        type="counsel_reply",
+        title="📩 상담사가 답변했습니다",
+        body=data.content[:60] + ("..." if len(data.content) > 60 else ""),
+        link=f"/dashboard/counsel",
+    ))
+
     return msg
 
 @router.patch("/counselor/sessions/{session_id}/assign", response_model=SessionOut)

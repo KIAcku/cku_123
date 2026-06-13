@@ -6,12 +6,14 @@ from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
+import asyncio
 
 from app.core.database import get_db
 from app.models.community import Post, Comment, PostLike, CommentLike
 from app.schemas.schemas import PostCreate, PostResponse, CommentCreate, CommentResponse
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.core.supabase_client import send_notification
 
 router = APIRouter()
 
@@ -43,6 +45,7 @@ async def create_post(
         title=post_in.title,
         content=post_in.content,
         category=post_in.category,
+        image_url=post_in.image_url,
     )
     db.add(post)
     await db.commit()
@@ -176,7 +179,8 @@ async def create_comment(
     current_user: User = Depends(get_current_user)
 ):
     post_result = await db.execute(select(Post).where(Post.id == post_id))
-    if not post_result.scalars().first():
+    post = post_result.scalars().first()
+    if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     comment = Comment(
         post_id=post_id,
@@ -187,6 +191,17 @@ async def create_comment(
     db.add(comment)
     await db.commit()
     await db.refresh(comment)
+
+    # 글 작성자에게 알림 전송 (자기 글 댓글이 아닐 때)
+    if str(post.user_id) != str(current_user.id):
+        asyncio.create_task(send_notification(
+            user_id=str(post.user_id),
+            type="comment",
+            title="💬 새 댓글이 달렸습니다",
+            body=f"{current_user.nickname or '익명'}: {comment_in.content[:50]}",
+            link="/dashboard/community",
+        ))
+
     return comment
 
 @router.get("/{post_id}/comments", response_model=List[CommentResponse])
