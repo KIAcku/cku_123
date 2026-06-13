@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLangStore } from '@/store/langStore';
 import { API_BASE, authHeaders, getCurrentUserId } from '@/lib/apiClient';
+import { uploadToStorage } from '@/lib/supabase';
 
 // ─── 다국어 번역 사전 ──────────────────────────────────────────────
 const i18n: Record<string, any> = {
@@ -222,6 +223,10 @@ export default function CommunityPage() {
   const [toast, setToast] = useState('');
   const [myId, setMyId] = useState('');
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [postImage, setPostImage] = useState<File | null>(null);
+  const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const communityFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMyId(getCurrentUserId());
@@ -290,12 +295,22 @@ export default function CommunityPage() {
   const handleSubmitPost = async () => {
     if (!form.title.trim() || !form.content.trim()) { showToast(t.toast_input); return; }
     setLoading(true);
+
+    let imageUrl: string | null = null;
+    if (postImage) {
+      setImageUploading(true);
+      imageUrl = await uploadToStorage(postImage, 'uploads', 'community');
+      setImageUploading(false);
+    }
+
     const res = await fetch(`${API_BASE}/posts`, {
-      method: 'POST', headers: authHeaders(), body: JSON.stringify(form),
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, image_url: imageUrl }),
     });
     if (res.ok) {
       setForm({ title: '', content: '', category: 'general' });
       setShowWrite(false);
+      setPostImage(null);
+      setPostImagePreview(null);
       await loadPosts();
       showToast(t.toast_success);
     } else {
@@ -428,6 +443,36 @@ export default function CommunityPage() {
               <textarea className="form-textarea" rows={5} placeholder={t.content_ph}
                 value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
             </div>
+            <div className="form-group">
+              <label className="form-label">이미지 첨부 (선택)</label>
+              <input
+                ref={communityFileRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) { setPostImage(f); setPostImagePreview(URL.createObjectURL(f)); }
+                }}
+              />
+              {postImagePreview ? (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={postImagePreview} alt="preview" style={{ maxHeight: 140, maxWidth: '100%', borderRadius: 8, border: '1px solid var(--glass-border)' }} />
+                  <button
+                    onClick={() => { setPostImage(null); setPostImagePreview(null); if (communityFileRef.current) communityFileRef.current.value = ''; }}
+                    style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', cursor: 'pointer', fontSize: 11 }}
+                  >✕</button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-glass btn-sm"
+                  onClick={() => communityFileRef.current?.click()}
+                >
+                  📎 이미지 첨부
+                </button>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button className="btn btn-glass" onClick={() => setShowWrite(false)}>{t.cancel}</button>
               <button className="btn btn-sunset" onClick={handleSubmitPost} disabled={loading}>
@@ -556,6 +601,14 @@ export default function CommunityPage() {
                 </div>
                 <button className="modal-close" onClick={() => { setSelectedPost(null); setEditingPost(null); }}>✕</button>
               </div>
+
+              {(selectedPost as any).image_url && (
+                <img
+                  src={(selectedPost as any).image_url}
+                  alt="첨부 이미지"
+                  style={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 'var(--radius-md)', marginBottom: 12, border: '1px solid var(--glass-border)' }}
+                />
+              )}
 
               <p style={{
                 fontSize: '0.875rem',

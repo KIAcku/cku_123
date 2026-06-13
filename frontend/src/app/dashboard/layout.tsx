@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLangStore } from '@/store/langStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -153,6 +154,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { theme, toggleTheme } = useThemeStore();
   const [user, setUser] = useState<any>(null);
   const [unread, setUnread] = useState({ messages: 0, reports: 0, alerts: 0 });
+  const [notifications, setNotifications] = useState<{id: string; type: string; title: string; body: string; link: string; is_read: boolean; created_at: string}[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
   const [sidebarHovered, setSidebarHovered] = useState(false);
 
   const t = i18n[lang] || i18n.ko;
@@ -185,6 +190,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Supabase Realtime 알림 구독
+  useEffect(() => {
+    if (!user) return;
+    const userId = user.id;
+
+    // 기존 알림 조회
+    supabase
+      .from('user_notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (data) {
+          setNotifications(data);
+          setNotifUnread(data.filter((n: any) => !n.is_read).length);
+        }
+      });
+
+    // 실시간 새 알림 구독
+    const channel = supabase
+      .channel(`notifications_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'user_notifications', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          setNotifications((prev) => [payload.new as any, ...prev].slice(0, 20));
+          setNotifUnread((prev) => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  // 알림 패널 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const markAllRead = async () => {
+    if (!user) return;
+    await supabase
+      .from('user_notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false);
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setNotifUnread(0);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -358,6 +420,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p suppressHydrationWarning style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{dateStr}</p>
           </div>
           <div className="header-actions">
+
+            {/* 실시간 알림 벨 */}
+            <div ref={notifRef} style={{ position: 'relative' }}>
+              <button
+                className="header-icon-btn"
+                onClick={() => { setNotifOpen((o) => !o); if (notifUnread > 0) markAllRead(); }}
+                title="알림"
+                style={{ position: 'relative' }}
+              >
+                🔔
+                {notifUnread > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 4, right: 4,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: 'var(--danger)',
+                    border: '2px solid var(--bg-layer2)',
+                    display: 'block',
+                  }} />
+                )}
+              </button>
+              {notifOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                  width: 320, maxHeight: 400, overflowY: 'auto',
+                  background: 'var(--bg-layer2)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-xl)',
+                  boxShadow: 'var(--glass-shadow)',
+                  zIndex: 500,
+                  padding: '12px 0',
+                }}>
+                  <div style={{ padding: '4px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>🔔 알림</span>
+                    <button onClick={markAllRead} style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>모두 읽음</button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', padding: '24px 0' }}>새 알림이 없어요</p>
+                  ) : notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => { router.push(n.link || '/dashboard'); setNotifOpen(false); }}
+                      style={{
+                        padding: '12px 16px', cursor: 'pointer',
+                        background: n.is_read ? 'transparent' : 'rgba(255,45,120,0.04)',
+                        borderLeft: n.is_read ? '3px solid transparent' : '3px solid var(--sunset-pink)',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--glass-bg-hover)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = n.is_read ? 'transparent' : 'rgba(255,45,120,0.04)')}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: 2 }}>{n.title}</div>
+                      {n.body && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.body}</div>}
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                        {new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* 위기 버튼 */}
             <button

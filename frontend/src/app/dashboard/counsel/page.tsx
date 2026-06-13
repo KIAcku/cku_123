@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useLangStore } from '@/store/langStore';
+import { supabase, uploadToStorage } from '@/lib/supabase';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://studentcare-production.up.railway.app/api/v1';
 const getHeaders = (json = true) => {
@@ -151,6 +152,10 @@ export default function CounselPage() {
   const [onlineCounselors, setOnlineCounselors] = useState(0);
   const [counselorList, setCounselorList] = useState<{id: string; nickname: string; is_online: boolean}[]>([]);
   const [counselTab, setCounselTab] = useState<'instant' | 'booking'>('instant');
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const t = i18n[lang] || i18n.ko;
@@ -183,16 +188,39 @@ export default function CounselPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  // Poll messages every 3 seconds when in active session
+  // Supabase Realtime 구독 — activeSession이 바낀 때마다
   useEffect(() => {
     if (!activeSession) return;
-    const poll = setInterval(async () => {
-      try {
-        const res = await fetch(`${API}/counsel/sessions/${activeSession.id}/messages`, { headers: getHeaders(false) });
-        if (res.ok) setMessages(await res.json());
-      } catch {}
-    }, 3000);
-    return () => clearInterval(poll);
+
+    const channel = supabase
+      .channel(`counsel_${activeSession.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'realtime_messages',
+          filter: `session_id=eq.${activeSession.id}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          // 서버에서 오는 realtime 메시지를 messages state에 추가
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: newMsg.id,
+              session_id: newMsg.session_id,
+              sender_role: newMsg.sender_role,
+              content: newMsg.content,
+              image_url: newMsg.image_url,
+              created_at: newMsg.created_at,
+            },
+          ]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [activeSession]);
 
   const loadSessions = async () => {
@@ -232,19 +260,40 @@ export default function CounselPage() {
     setLoading(false);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingImage(file);
+    setPendingImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setPendingImage(null);
+    setPendingImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const sendMessage = async () => {
-    if (!inputText.trim() || !activeSession) return;
+    if ((!inputText.trim() && !pendingImage) || !activeSession) return;
     const text = inputText;
     setInputText('');
     setSending(true);
+
     try {
+      let imageUrl: string | null = null;
+      if (pendingImage) {
+        setUploading(true);
+        imageUrl = await uploadToStorage(pendingImage, 'uploads', 'counsel');
+        setUploading(false);
+        clearImage();
+      }
+
       await fetch(`${API}/counsel/sessions/${activeSession.id}/messages`, {
-        method: 'POST', headers: getHeaders(),
-        body: JSON.stringify({ content: text }),
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ content: text || '📎 이미지', image_url: imageUrl }),
       });
-      // Immediately fetch updated messages
-      const res = await fetch(`${API}/counsel/sessions/${activeSession.id}/messages`, { headers: getHeaders(false) });
-      if (res.ok) setMessages(await res.json());
+      // Note: Supabase Realtime이 새 메시지를 자동으로 수신하므로 별도 fetch 불필요
     } catch {}
     setSending(false);
   };
@@ -311,16 +360,15 @@ export default function CounselPage() {
               )}
               <div style={{ maxWidth: '70%' }}>
                 {!isUser && <div style={{ fontSize: '.72rem', color: '#adb5bd', marginBottom: 4, fontWeight: 600 }}>{t.counselor}</div>}
-                <div style={{
-                  padding: '12px 16px', borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                  background: isUser ? 'linear-gradient(135deg, #4F8EF7, #6c63ff)' : 'white',
-                  color: isUser ? 'white' : '#1a1a2e',
-                  fontSize: '.88rem', lineHeight: 1.7,
-                  boxShadow: '0 2px 8px rgba(0,0,0,.08)',
-                  border: isUser ? 'none' : '1px solid #e9ecef',
-                  whiteSpace: 'pre-wrap'
-                }}>
-                  {msg.content}
+                <div style={{ padding: '12px 16px', borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px', background: isUser ? 'linear-gradient(135deg, #4F8EF7, #6c63ff)' : 'var(--glass-bg-hover)', color: isUser ? 'white' : 'var(--text-primary)', fontSize: '.88rem', lineHeight: 1.7, boxShadow: '0 2px 8px rgba(0,0,0,.08)', border: isUser ? 'none' : '1px solid var(--glass-border)', whiteSpace: 'pre-wrap' }}>
+                  {(msg as any).image_url && (
+                    <img
+                      src={(msg as any).image_url}
+                      alt="첨부 이미지"
+                      style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, marginBottom: msg.content && msg.content !== '📎 이미지' ? 8 : 0, display: 'block' }}
+                    />
+                  )}
+                  {msg.content && msg.content !== '📎 이미지' && msg.content}
                 </div>
                 <div style={{ fontSize: '.68rem', color: '#adb5bd', marginTop: 4, textAlign: isUser ? 'right' : 'left' }}>
                   {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
@@ -333,26 +381,44 @@ export default function CounselPage() {
       </div>
 
       {/* 입력창 */}
-      <div style={{ background: 'white', borderTop: '1px solid #e9ecef', padding: '14px 20px', display: 'flex', gap: 10, flexShrink: 0 }}>
-        <input
-          style={{ flex: 1, border: '1.5px solid #dee2e6', borderRadius: 24, padding: '10px 18px', fontSize: '.9rem', outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s' }}
-          placeholder={activeSession?.status === 'closed' ? t.session_closed : t.type_message}
-          value={inputText}
-          onChange={e => setInputText(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-          disabled={activeSession?.status === 'closed' || sending}
-          onFocus={e => e.target.style.borderColor = '#4F8EF7'}
-          onBlur={e => e.target.style.borderColor = '#dee2e6'}
-        />
-        <button onClick={sendMessage} disabled={sending || !inputText.trim() || activeSession?.status === 'closed'} style={{
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #4F8EF7, #6c63ff)', color: 'white',
-          border: 'none', cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          opacity: (!inputText.trim() || activeSession?.status === 'closed') ? 0.5 : 1,
-          transition: 'all .15s', flexShrink: 0
-        }}>
-          {sending ? '⏳' : '→'}
-        </button>
+      <div style={{ background: 'var(--bg-layer2)', borderTop: '1px solid var(--glass-border)', padding: '14px 20px', flexShrink: 0 }}>
+        {/* 이미지 미리보기 */}
+        {pendingImagePreview && (
+          <div style={{ marginBottom: 10, position: 'relative', display: 'inline-block' }}>
+            <img src={pendingImagePreview} alt="preview" style={{ maxHeight: 80, maxWidth: 200, borderRadius: 8, border: '1px solid var(--glass-border)' }} />
+            <button
+              onClick={clearImage}
+              style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >✕</button>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {/* 이미지 첨부 버튼 */}
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={activeSession?.status === 'closed'}
+            style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-secondary)', opacity: activeSession?.status === 'closed' ? 0.4 : 1 }}
+            title="이미지 첨부"
+          >📎</button>
+          <input
+            style={{ flex: 1, border: '1.5px solid var(--glass-border)', borderRadius: 24, padding: '10px 18px', fontSize: '.9rem', outline: 'none', fontFamily: 'inherit', background: 'var(--glass-bg)', color: 'var(--text-primary)', transition: 'border-color 0.15s' }}
+            placeholder={activeSession?.status === 'closed' ? t.session_closed : t.type_message}
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            disabled={activeSession?.status === 'closed' || sending}
+            onFocus={(e) => (e.target.style.borderColor = '#4F8EF7')}
+            onBlur={(e) => (e.target.style.borderColor = 'var(--glass-border)')}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={sending || uploading || (!inputText.trim() && !pendingImage) || activeSession?.status === 'closed'}
+            style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #4F8EF7, #6c63ff)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((!inputText.trim() && !pendingImage) || activeSession?.status === 'closed') ? 0.5 : 1, transition: 'all .15s', flexShrink: 0 }}
+          >
+            {uploading ? '⏳' : sending ? '⏳' : '→'}
+          </button>
+        </div>
       </div>
 
       {toast && (
