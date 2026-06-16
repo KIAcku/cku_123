@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.v1 import auth, diary, report, community, counsel, upload, alerts, notifications, statistics, notices, counselors
+from app.api.v1 import auth, diary, report, community, counsel, upload, alerts, notifications, statistics, notices, counselors, analysis, cbt
 import os
 
 # 모든 모델 import (테이블 생성을 위해)
@@ -14,6 +14,7 @@ from app.models import alert as alert_model
 from app.models import notice as notice_model
 from app.models import verification as verification_model
 from app.models.counsel import CounselReport
+from app.models.cbt import CbtRecord, CopingCard
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -95,6 +96,8 @@ app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifica
 app.include_router(statistics.router, prefix=f"{settings.API_V1_STR}/statistics", tags=["통계"])
 app.include_router(notices.router, prefix=f"{settings.API_V1_STR}/notices", tags=["공지사항"])
 app.include_router(counselors.router, prefix=f"{settings.API_V1_STR}/counselors", tags=["상담사"])
+app.include_router(analysis.router, prefix=f"{settings.API_V1_STR}/analysis", tags=["심리 분석"])
+app.include_router(cbt.router, prefix=f"{settings.API_V1_STR}/cbt", tags=["CBT 자기성찰"])
 
 @app.get("/")
 def read_root():
