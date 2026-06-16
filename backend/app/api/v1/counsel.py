@@ -14,6 +14,7 @@ from app.models.alert import AlertLog
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.supabase_client import broadcast_message, send_notification
+from app.core.encryption import encrypt, decrypt
 
 router = APIRouter()
 
@@ -108,6 +109,16 @@ async def get_tests(
 
 # ─── 상담 세션 ─────────────────────────────────────────────
 
+def _decrypt_session(session: CounselSession) -> CounselSession:
+    """세션의 concern 필드를 복호화합니다."""
+    session.concern = decrypt(session.concern)
+    return session
+
+def _decrypt_message(msg: CounselMessage) -> CounselMessage:
+    """메시지의 content 필드를 복호화합니다."""
+    msg.content = decrypt(msg.content)
+    return msg
+
 @router.post("/sessions", response_model=SessionOut, status_code=201)
 async def create_session(
     data: SessionCreate,
@@ -116,7 +127,7 @@ async def create_session(
 ):
     session = CounselSession(
         user_id=current_user.id,
-        concern=data.concern,
+        concern=encrypt(data.concern),   # 🔐 상담 주제 암호화
         scheduled_at=data.scheduled_at,
         status="waiting",
         counselor_name="마음이음 상담사",
@@ -137,18 +148,20 @@ async def create_session(
     greeting = CounselMessage(
         session_id=session.id,
         sender_role="counselor",
-        content=greeting_content,
+        content=encrypt(greeting_content),   # 🔐 인사 메시지 암호화
     )
     db.add(greeting)
     await db.commit()
 
-    # Supabase Realtime에 인사 메시지 broadcast (fire-and-forget)
+    # Supabase Realtime에 인사 메시지 broadcast (평문으로 전송)
     asyncio.create_task(broadcast_message(
         session_id=session.id,
         sender_role="counselor",
         content=greeting_content,
     ))
 
+    # 응답 시 concern 복호화
+    session.concern = decrypt(session.concern)
     return session
 
 @router.get("/sessions", response_model=List[SessionOut])
@@ -160,7 +173,11 @@ async def get_sessions(
         select(CounselSession).where(CounselSession.user_id == current_user.id)
         .order_by(CounselSession.created_at.desc())
     )
-    return res.scalars().all()
+    sessions = res.scalars().all()
+    # 🔐 concern 복호화
+    for s in sessions:
+        s.concern = decrypt(s.concern)
+    return sessions
 
 @router.get("/sessions/{session_id}/messages", response_model=List[MessageOut])
 async def get_messages(
@@ -176,7 +193,11 @@ async def get_messages(
         select(CounselMessage).where(CounselMessage.session_id == session_id)
         .order_by(CounselMessage.created_at.asc())
     )
-    return res.scalars().all()
+    messages = res.scalars().all()
+    # 🔐 content 복호화
+    for msg in messages:
+        msg.content = decrypt(msg.content)
+    return messages
 
 @router.post("/sessions/{session_id}/messages", response_model=List[MessageOut])
 async def send_message(
@@ -192,25 +213,24 @@ async def send_message(
     if session.status == "closed":
         raise HTTPException(status_code=400, detail="종료된 상담 세션입니다.")
 
-    # 사용자 메시지 저장
-    user_msg = CounselMessage(
-        session_id=session_id,
-        sender_role="user",
-        content=data.content,
-        image_url=data.image_url,
-    )
-    db.add(user_msg)
-
-    # 위기 키워드 감지 후 AlertLog 생성
+    # 위기 키워드 감지 (저장 전 평문으로 검사)
     for kw in CRISIS_KEYWORDS:
         if kw in data.content:
             alert = AlertLog(session_id=session_id, message_content=data.content, keyword=kw)
             db.add(alert)
             break
 
+    # 🔐 메시지 암호화 후 저장
+    user_msg = CounselMessage(
+        session_id=session_id,
+        sender_role="user",
+        content=encrypt(data.content),
+        image_url=data.image_url,
+    )
+    db.add(user_msg)
     await db.commit()
 
-    # Supabase Realtime broadcast (fire-and-forget)
+    # Supabase Realtime broadcast (평문으로 전송)
     asyncio.create_task(broadcast_message(
         session_id=session_id,
         sender_role="user",
@@ -222,7 +242,11 @@ async def send_message(
         select(CounselMessage).where(CounselMessage.session_id == session_id)
         .order_by(CounselMessage.created_at.asc())
     )
-    return res.scalars().all()
+    messages = res.scalars().all()
+    # 🔐 전체 메시지 복호화
+    for msg in messages:
+        msg.content = decrypt(msg.content)
+    return messages
 
 @router.patch("/sessions/{session_id}/close", response_model=SessionOut)
 async def close_session(
@@ -239,6 +263,7 @@ async def close_session(
     db.add(session)
     await db.commit()
     await db.refresh(session)
+    session.concern = decrypt(session.concern)
     return session
 
 # ─── 상담사 전용 API ────────────────────────────────────────
@@ -255,7 +280,11 @@ async def get_all_sessions_for_counselor(
         select(CounselSession).where(CounselSession.status.in_(["waiting", "active"]))
         .order_by(CounselSession.created_at.desc())
     )
-    return res.scalars().all()
+    sessions = res.scalars().all()
+    # 🔐 concern 복호화
+    for s in sessions:
+        s.concern = decrypt(s.concern)
+    return sessions
 
 @router.get("/counselor/sessions/{session_id}/messages", response_model=List[MessageOut])
 async def get_session_messages_counselor(
@@ -270,7 +299,11 @@ async def get_session_messages_counselor(
         select(CounselMessage).where(CounselMessage.session_id == session_id)
         .order_by(CounselMessage.created_at.asc())
     )
-    return res.scalars().all()
+    messages = res.scalars().all()
+    # 🔐 content 복호화
+    for msg in messages:
+        msg.content = decrypt(msg.content)
+    return messages
 
 @router.post("/counselor/sessions/{session_id}/reply", response_model=MessageOut)
 async def counselor_reply(
@@ -286,17 +319,18 @@ async def counselor_reply(
     session = sr.scalars().first()
     if not session:
         raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다.")
+    # 🔐 상담사 답변 암호화 후 저장
     msg = CounselMessage(
         session_id=session_id,
         sender_role="counselor",
-        content=data.content,
+        content=encrypt(data.content),
         image_url=data.image_url,
     )
     db.add(msg)
     await db.commit()
     await db.refresh(msg)
 
-    # Supabase Realtime broadcast + 학생에게 알림
+    # Supabase Realtime broadcast + 학생에게 알림 (평문으로 전송)
     asyncio.create_task(broadcast_message(
         session_id=session_id,
         sender_role="counselor",
@@ -311,6 +345,8 @@ async def counselor_reply(
         link=f"/dashboard/counsel",
     ))
 
+    # 🔐 응답 시 복호화
+    msg.content = decrypt(msg.content)
     return msg
 
 @router.patch("/counselor/sessions/{session_id}/assign", response_model=SessionOut)
@@ -330,6 +366,7 @@ async def assign_session(
     db.add(session)
     await db.commit()
     await db.refresh(session)
+    session.concern = decrypt(session.concern)
     return session
 
 @router.post("/counselor/sessions/{session_id}/report", response_model=CounselReportOut, status_code=201)
@@ -345,12 +382,13 @@ async def create_counsel_report(
     report = CounselReport(
         session_id=session_id,
         counselor_id=current_user.id,
-        summary=data.summary,
+        summary=encrypt(data.summary),   # 🔐 보고서 요약 암호화
         risk_level=data.risk_level
     )
     db.add(report)
     await db.commit()
     await db.refresh(report)
+    report.summary = decrypt(report.summary)
     return report
 
 @router.get("/teacher/reports", response_model=List[CounselReportOut])
@@ -362,4 +400,8 @@ async def get_teacher_reports(
         raise HTTPException(status_code=403, detail="선생님 권한이 필요합니다.")
     from app.models.counsel import CounselReport
     res = await db.execute(select(CounselReport).order_by(CounselReport.created_at.desc()))
-    return res.scalars().all()
+    reports = res.scalars().all()
+    # 🔐 보고서 요약 복호화
+    for r in reports:
+        r.summary = decrypt(r.summary)
+    return reports

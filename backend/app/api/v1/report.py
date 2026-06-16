@@ -8,6 +8,7 @@ from app.models.report import Report
 from app.schemas.schemas import ReportCreate, ReportResponse
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.core.encryption import encrypt, decrypt
 
 router = APIRouter()
 
@@ -19,12 +20,15 @@ async def create_report(
 ):
     report = Report(
         category=report_in.category,
-        title=report_in.title,
-        content=report_in.content,
+        title=encrypt(report_in.title),       # 🔐 제목 암호화
+        content=encrypt(report_in.content),   # 🔐 내용 암호화
     )
     db.add(report)
     await db.commit()
     await db.refresh(report)
+    # 응답 시 복호화
+    report.title = decrypt(report.title)
+    report.content = decrypt(report.content)
     return report
 
 @router.get("", response_model=List[ReportResponse])
@@ -35,7 +39,12 @@ async def get_reports(
     if current_user.role not in ("TEACHER", "ADMIN"):
         raise HTTPException(status_code=403, detail="선생님 권한이 필요합니다.")
     result = await db.execute(select(Report).order_by(Report.created_at.desc()))
-    return result.scalars().all()
+    reports = result.scalars().all()
+    # 🔐 제목 + 내용 복호화
+    for r in reports:
+        r.title = decrypt(r.title)
+        r.content = decrypt(r.content)
+    return reports
 
 class ReportStatusUpdate(BaseModel):
     status: str  # pending, reviewing, resolved
@@ -57,4 +66,7 @@ async def update_report_status(
     db.add(report)
     await db.commit()
     await db.refresh(report)
+    # 🔐 복호화 후 반환
+    report.title = decrypt(report.title)
+    report.content = decrypt(report.content)
     return report

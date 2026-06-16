@@ -33,8 +33,16 @@ class Settings(BaseSettings):
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@maumium.com"
 
+    # Supabase
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # 데이터 암호화 키 (Fernet, AES-256)
+    ENCRYPTION_KEY: str = ""
+
     class Config:
         env_file = ".env"
+        extra = "ignore"  # .env의 여분 키 무시
 
 settings = Settings()
 
