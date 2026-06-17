@@ -22,6 +22,7 @@ const i18n: Record<string, Record<string, string>> = {
     report_mgmt: '신고 관리', counsel_reports: '상담 보고서',
     statistics: '통계', students: '학생 목록', notices: '공지 관리',
     counsel_mgmt: '상담 관리', help: '도움말', sys_settings: '시스템 설정',
+    analysis: '감정 분석', cbt: 'CBT 자기성찰',
   },
   en: {
     home: 'Home', diary: 'Emotion Diary', test: 'Self-Check',
@@ -32,6 +33,7 @@ const i18n: Record<string, Record<string, string>> = {
     report_mgmt: 'Reports', counsel_reports: 'Counsel Reports',
     statistics: 'Statistics', students: 'Students', notices: 'Notices',
     counsel_mgmt: 'Counseling', help: 'Help', sys_settings: 'Settings',
+    analysis: 'Analysis', cbt: 'CBT Journal',
   },
   ja: {
     home: 'ホーム', diary: '感情日記', test: '自己診断',
@@ -42,6 +44,7 @@ const i18n: Record<string, Record<string, string>> = {
     report_mgmt: '通報管理', counsel_reports: '相談報告',
     statistics: '統計', students: '学生一覧', notices: 'お知らせ',
     counsel_mgmt: '相談管理', help: 'ヘルプ', sys_settings: 'システム設定',
+    analysis: '感情分析', cbt: 'CBT日記',
   },
   zh: {
     home: '首页', diary: '情绪日记', test: '自评',
@@ -52,6 +55,7 @@ const i18n: Record<string, Record<string, string>> = {
     report_mgmt: '举报管理', counsel_reports: '咨询报告',
     statistics: '统计', students: '学生列表', notices: '公告',
     counsel_mgmt: '咨询管理', help: '帮助', sys_settings: '系统设置',
+    analysis: '情绪分析', cbt: 'CBT日志',
   },
 };
 
@@ -59,9 +63,11 @@ const getNavSections = (t: Record<string, string>) => [
   {
     label: t.main_menu,
     items: [
-      { href: '/dashboard',           icon: '🏠', label: t.home },
-      { href: '/dashboard/diary',     icon: '📔', label: t.diary },
-      { href: '/dashboard/test',      icon: '🧠', label: t.test },
+      { href: '/dashboard',             icon: '🏠', label: t.home },
+      { href: '/dashboard/diary',       icon: '📔', label: t.diary },
+      { href: '/dashboard/test',        icon: '🧠', label: t.test },
+      { href: '/dashboard/analysis',    icon: '📊', label: t.analysis },
+      { href: '/dashboard/cbt',         icon: '🧩', label: t.cbt },
     ]
   },
   {

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useLangStore } from '@/store/langStore';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/apiClient';
+import WeeklyReportModal from '@/components/WeeklyReportModal';
 
 const i18n: Record<string, Record<string, string>> = {
   ko: {
@@ -190,6 +191,9 @@ export default function DashboardHome() {
             </motion.div>
           </div>
         </motion.div>
+
+        {/* ── 주간 리포트 (자체 버튼 + 모달 포함) ── */}
+        <WeeklyReportModal />
 
         {/* ── 통계 카드 ── */}
         <motion.div variants={itemVariants}>
