@@ -241,7 +241,11 @@ export default function AnalysisPage() {
     setLoading((prev) => ({ ...prev, test: false }));
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    // 심리검사 완료 후 강제 갱신 플래그 확인
+    sessionStorage.removeItem('analysis_needs_refresh');
+    fetchData();
+  }, []);
 
   // 언어 바뀌면 distData의 emotion 레이블 재매핑
   useEffect(() => {

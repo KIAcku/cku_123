@@ -196,25 +196,25 @@ const i18n: Record<string, any> = {
     remain_questions: 'あと{count}問回答してください',
     test_result_title: '検査結果',
     recommended_action: '💡 推奨される行動',
-    score_range: '得점範囲',
+    score_range: 'スコア範囲',
     current_label: '現在',
-    other_test_btn: '다른 검사 하기',
-    counsel_btn: '💬 상담 받기',
+    other_test_btn: '他の検査を受ける',
+    counsel_btn: '💬 カウンセリングを受ける',
     options: ['全くない (0)', '数日 (1)', '半分以上の日数 (2)', 'ほとんど毎日 (3)'],
     tests: {
       phq9: {
         title: 'PHQ-9 うつ病自己診断',
         desc: '過去2週間、次の問題にどのくらい頻繁に悩まされましたか？',
         questions: [
-          '物事を行うことに対する興味や楽しさがほとんどない',
-          '기분이 다운되거나, 우울하거나, 희망이 없다고 느낀다',
+          '物事に対する興味や楽しさがほとんどない',
+          '気分が落ち込んだり、うつな気分になったり、絶望を感じたりする',
           '寝つきが悪い、途中で目が覚める、または逆に眠りすぎる',
           '疲れた感じがする、または気力がない',
           '食欲がない、または食べすぎる',
-          '自分が失格者であると感じる、または自分がダメな人間だ、家族を失望させたと思う',
-          '新聞を読むことやテレビを見ることなど、物事に集中することが難しい',
-          '他人が気づくほど話し方や動作が遅い。または逆に、落ち着きがかけて動き回っている',
-          '自分が死んだ方がましだ、または何らかの方法で自分を傷つけようと思ったことがある',
+          '自分が失格者であると感じる、または家族を失望させたと思う',
+          '新聞を読むことやテレビを見るなど、物事に集中することが難しい',
+          '他人が気づくほど話し方や動作が遅い、または逆に落ち着きなく動き回る',
+          '自分が死んだほうがましだ、または自分を傷つけようと思ったことがある',
         ],
         levels: [
           { level: 'minimal',  label: '正常範囲',   desc: '現在、うつの症状はほとんどありません。', action: '健康的な心を維持するために自己管理を続けてください。' },
@@ -238,13 +238,13 @@ const i18n: Record<string, any> = {
         ],
         levels: [
           { level: 'minimal',  label: '正常範囲',   desc: '不安の症状はほとんどありません。', action: '現在の状態をよく維持できています！' },
-          { level: 'mild',     label: '軽度の不安', desc: '軽い不安 of 症状があります。', action: '深呼吸のエクササイズやマインドフルネス瞑想が効果的です。' },
+          { level: 'mild',     label: '軽度の不安', desc: '軽い不安の症状があります。', action: '深呼吸のエクササイズやマインドフルネス瞑想が効果的です。' },
           { level: 'moderate', label: '中等度の不安', desc: '中程度の不安の症状があります。', action: '専門的な相談を検討してください。認知行動療法（CBT）が効果的です。' },
           { level: 'severe',   label: '重度の不安', desc: '深刻な不安の症状があります。', action: 'すぐに専門家の治療を受けてください。' }
         ]
       },
       stress: {
-        title: '学업ストレス自己診断',
+        title: '学業ストレス自己診断',
         desc: '現在の学校生活について、次の項目をチェックしてください。',
         questions: [
           '勉強に集中するのが難しい',
@@ -255,7 +255,7 @@ const i18n: Record<string, any> = {
           '将来（進路、就職）が不安で途方に暮れる',
           '十分な睡眠が取れていない',
           '食事を抜いたり不規則に食べたりする',
-          '一人になりたい、誰에도会いたくない',
+          '一人になりたい、誰にも会いたくない',
           'すべてが面倒でやる気が出ない',
         ],
         levels: [
@@ -416,11 +416,15 @@ export default function TestPage() {
     // DB 저장
     setLoading(true);
     try {
-      await fetch(`${API_BASE}/counsel/tests`, {
+      const res = await fetch(`${API_BASE}/counsel/tests`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ test_type: selectedTest, score, answers, level: level.level }),
       });
+      if (res.ok) {
+        // 분석 페이지 캐시 무효화 플래그 설정
+        sessionStorage.setItem('analysis_needs_refresh', '1');
+      }
     } catch {}
     setLoading(false);
   };
@@ -464,15 +468,16 @@ export default function TestPage() {
                 if (!testData) return null;
                 return (
                   <div key={key} onClick={() => startTest(key)} style={{
-                    background: 'white', borderRadius: 16, padding: '28px 20px', textAlign: 'center',
-                    border: `2px solid #e9ecef`, cursor: 'pointer', transition: 'all .2s',
-                    boxShadow: '0 1px 4px rgba(0,0,0,.04)'
+                    background: 'var(--glass-bg)', borderRadius: 16, padding: '28px 20px', textAlign: 'center',
+                    border: `2px solid var(--glass-border)`, cursor: 'pointer', transition: 'all .2s',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: 'var(--glass-shadow)'
                   }}
-                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = meta.color; (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${meta.color}22`; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e9ecef'; (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(0,0,0,.04)'; }}>
+                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = meta.color; (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${meta.color}33`; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--glass-border)'; (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--glass-shadow)'; }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>{meta.icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: '.95rem', marginBottom: 8, color: meta.color }}>{testData.title}</div>
-                    <div style={{ fontSize: '.78rem', color: '#6c757d', marginBottom: 12 }}>{t.questions_count.replace('{count}', String(testData.questions.length))}</div>
+                     <div style={{ fontWeight: 700, fontSize: '.95rem', marginBottom: 8, color: meta.color, wordBreak: 'keep-all' }}>{testData.title}</div>
+                    <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: 12 }}>{t.questions_count.replace('{count}', String(testData.questions.length))}</div>
                     <div style={{ background: `${meta.color}12`, color: meta.color, padding: '6px 14px', borderRadius: 20, fontSize: '.75rem', fontWeight: 600, display: 'inline-block' }}>
                       {t.start_btn}
                     </div>
@@ -481,7 +486,7 @@ export default function TestPage() {
               })}
             </div>
 
-            <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 10, padding: '12px 16px', fontSize: '.82rem', color: '#856404', marginTop: 24 }}>
+            <div style={{ background: 'rgba(255,193,7,0.12)', border: '1px solid rgba(255,193,7,0.4)', borderRadius: 10, padding: '12px 16px', fontSize: '.82rem', color: 'var(--text-secondary)', marginTop: 24 }}>
               {t.warning_text}
             </div>
           </div>
@@ -501,14 +506,14 @@ export default function TestPage() {
               </div>
             </div>
 
-            <p style={{ color: '#6c757d', fontSize: '.875rem', marginBottom: 24, background: '#f8f9fa', padding: '10px 14px', borderRadius: 8 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '.875rem', marginBottom: 24, background: 'var(--glass-bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--glass-border)' }}>
               📋 {test.desc}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {test.questions.map((q: string, i: number) => (
-                <div key={i} style={{ background: 'white', borderRadius: 14, padding: '20px', border: `1px solid ${answers[i] >= 0 ? test.color : '#e9ecef'}`, transition: 'all .2s', boxShadow: answers[i] >= 0 ? `0 2px 12px ${test.color}15` : '0 1px 4px rgba(0,0,0,.04)' }}>
-                  <div style={{ fontWeight: 600, fontSize: '.9rem', marginBottom: 14, display: 'flex', gap: 8 }}>
+                <div key={i} style={{ background: 'var(--glass-bg)', borderRadius: 14, padding: '20px', border: `1px solid ${answers[i] >= 0 ? test.color : 'var(--glass-border)'}`, transition: 'all .2s', backdropFilter: 'blur(12px)', boxShadow: answers[i] >= 0 ? `0 2px 12px ${test.color}25` : 'var(--glass-shadow)' }}>
+                  <div style={{ fontWeight: 600, fontSize: '.9rem', marginBottom: 14, display: 'flex', gap: 8, color: 'var(--text-primary)' }}>
                     <span style={{ background: test.color, color: 'white', width: 22, height: 22, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                     {q}
                   </div>
@@ -516,9 +521,9 @@ export default function TestPage() {
                     {t.options.map((opt: string, val: number) => (
                       <button key={val} onClick={() => selectAnswer(i, val)} style={{
                         padding: '9px 12px', borderRadius: 8, fontSize: '.8rem', cursor: 'pointer',
-                        border: `1.5px solid ${answers[i] === val ? test.color : '#dee2e6'}`,
-                        background: answers[i] === val ? `${test.color}12` : 'white',
-                        color: answers[i] === val ? test.color : '#495057',
+                        border: `1.5px solid ${answers[i] === val ? test.color : 'var(--glass-border)'}`,
+                        background: answers[i] === val ? `${test.color}22` : 'var(--bg-layer2)',
+                        color: answers[i] === val ? test.color : 'var(--text-secondary)',
                         fontWeight: answers[i] === val ? 700 : 400, transition: 'all .15s',
                         textAlign: 'left'
                       }}>
@@ -531,7 +536,7 @@ export default function TestPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={() => setStep(0)} style={{ background: '#F8F9FA', color: '#6c757d', padding: '12px 20px', borderRadius: 10, border: '1px solid #dee2e6', cursor: 'pointer', fontWeight: 500 }}>{t.back_btn}</button>
+              <button onClick={() => setStep(0)} style={{ background: 'var(--glass-bg)', color: 'var(--text-muted)', padding: '12px 20px', borderRadius: 10, border: '1px solid var(--glass-border)', cursor: 'pointer', fontWeight: 500 }}>{t.back_btn}</button>
               <button onClick={submitTest} disabled={!allAnswered} style={{
                 flex: 1, background: test.color, color: 'white', padding: '12px 20px', borderRadius: 10,
                 border: 'none', cursor: allAnswered ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '1rem',
@@ -566,26 +571,27 @@ export default function TestPage() {
             </div>
 
             {/* 추천 행동 */}
-            <div style={{ background: 'white', borderRadius: 14, padding: '20px', border: '1px solid #e9ecef', marginBottom: 24, textAlign: 'left' }}>
-              <div style={{ fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: 'var(--glass-bg)', borderRadius: 14, padding: '20px', border: '1px solid var(--glass-border)', marginBottom: 24, textAlign: 'left', backdropFilter: 'blur(12px)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
                 <span style={{ color: '#4F8EF7' }}>💡</span> {t.recommended_action}
               </div>
-              <p style={{ fontSize: '.875rem', color: '#495057', lineHeight: 1.7 }}>{result.level.action}</p>
+              <p style={{ fontSize: '.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{result.level.action}</p>
             </div>
 
             {/* 레벨별 점수 바 */}
-            <div style={{ background: 'white', borderRadius: 14, padding: '20px', border: '1px solid #e9ecef', marginBottom: 28, textAlign: 'left' }}>
-              <div style={{ fontWeight: 700, marginBottom: 12, fontSize: '.9rem' }}>{t.score_range}</div>
+            <div style={{ background: 'var(--glass-bg)', borderRadius: 14, padding: '20px', border: '1px solid var(--glass-border)', marginBottom: 28, textAlign: 'left', backdropFilter: 'blur(12px)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 12, fontSize: '.9rem', color: 'var(--text-primary)' }}>{t.score_range}</div>
               {result.test.levels.map((l: any, i: number) => {
                 const prev = i > 0 ? result.test.levels[i - 1].max + 1 : 0;
+                const scoreUnit = lang === 'ko' ? '점' : lang === 'zh' ? '分' : lang === 'ja' ? '点' : ' pts';
                 return (
                   <div key={l.level} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: levelColors[l.level] || '#adb5bd', flexShrink: 0 }} />
-                    <div style={{ fontSize: '.8rem', flex: 1, color: l.level === result.level.level ? '#1a1a2e' : '#6c757d', fontWeight: l.level === result.level.level ? 700 : 400 }}>
-                      {l.label} ({prev}~{l.max}{lang === 'ko' ? '점' : lang === 'zh' ? '分' : lang === 'ja' ? '点' : ' pts'})
+                    <div style={{ fontSize: '.8rem', flex: 1, color: l.level === result.level.level ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: l.level === result.level.level ? 700 : 400 }}>
+                      {l.label} ({prev}~{l.max}{scoreUnit})
                     </div>
                     {l.level === result.level.level && (
-                      <span style={{ background: `${levelColors[l.level]}18`, color: levelColors[l.level], padding: '2px 8px', borderRadius: 20, fontSize: '.72rem', fontWeight: 700 }}>{t.current_label}</span>
+                      <span style={{ background: `${levelColors[l.level]}22`, color: levelColors[l.level], padding: '2px 8px', borderRadius: 20, fontSize: '.72rem', fontWeight: 700 }}>{t.current_label}</span>
                     )}
                   </div>
                 );
@@ -593,7 +599,7 @@ export default function TestPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => setStep(0)} style={{ background: '#F8F9FA', color: '#6c757d', padding: '11px 22px', borderRadius: 10, border: '1px solid #dee2e6', cursor: 'pointer', fontWeight: 500 }}>
+              <button onClick={() => { setStep(0); setResult(null); setSelectedTest(null); }} style={{ background: 'var(--glass-bg)', color: 'var(--text-muted)', padding: '11px 22px', borderRadius: 10, border: '1px solid var(--glass-border)', cursor: 'pointer', fontWeight: 500 }}>
                 {t.other_test_btn}
               </button>
               <button onClick={() => router.push('/dashboard/counsel')} style={{ background: '#4F8EF7', color: 'white', padding: '11px 22px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700 }}>
