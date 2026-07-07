@@ -107,6 +107,100 @@ async def get_tests(
     )
     return res.scalars().all()
 
+
+# ─── 통합 심리 프로파일 리포트 ──────────────────────────────────
+@router.get("/tests/integrated-report")
+async def get_integrated_report(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """각 검사 유형별 최신 결과를 가져와 통합 심리 프로파일을 반환합니다."""
+    res = await db.execute(
+        select(TestResult)
+        .where(TestResult.user_id == current_user.id)
+        .order_by(TestResult.created_at.desc())
+    )
+    all_results = res.scalars().all()
+
+    # 검사 유형별 최신 결과 1건만 추출
+    latest: dict = {}
+    for r in all_results:
+        if r.test_type not in latest:
+            latest[r.test_type] = {
+                "test_type": r.test_type,
+                "score": r.score,
+                "level": r.level,
+                "answers": json.loads(r.answers) if r.answers else [],
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+
+    # 도메인별 점수 정규화 (0~100 스케일)
+    NORMALIZERS = {
+        "phq9":        {"max": 27, "invert": True},   # 높을수록 나쁨
+        "gad7":        {"max": 21, "invert": True},
+        "stress":      {"max": 30, "invert": True},
+        "rses":        {"max": 40, "invert": False},   # 높을수록 좋음
+        "ecr_anxiety": {"max": 36, "invert": True},
+        "ecr_avoid":   {"max": 36, "invert": True},
+        "relationship":{"max": 40, "invert": True},
+        "ders":        {"max": 40, "invert": True},
+        "ego":         {"max": 32, "invert": False},
+    }
+
+    # ECR은 answers에서 불안/회피 차원 별도 분리
+    ecr_data = latest.get("ecr")
+    if ecr_data and ecr_data.get("answers"):
+        answers = ecr_data["answers"]
+        # 홀수 인덱스(0,2,4,6,8,10) = 불안, 짝수(1,3,5,7,9,11) = 회피
+        anxiety_score = sum(answers[i] for i in range(0, min(12, len(answers)), 2))
+        avoid_score   = sum(answers[i] for i in range(1, min(12, len(answers)), 2))
+        latest["ecr_anxiety"] = {"test_type": "ecr_anxiety", "score": anxiety_score, "level": ecr_data["level"], "created_at": ecr_data["created_at"]}
+        latest["ecr_avoid"]   = {"test_type": "ecr_avoid",   "score": avoid_score,   "level": ecr_data["level"], "created_at": ecr_data["created_at"]}
+
+    def normalize(test_type: str, score: int) -> float:
+        cfg = NORMALIZERS.get(test_type)
+        if not cfg:
+            return 50.0
+        pct = min(score / cfg["max"], 1.0) * 100
+        return round(100 - pct if cfg["invert"] else pct, 1)
+
+    profile = {}
+    for tt, data in latest.items():
+        if tt in NORMALIZERS:
+            profile[tt] = {
+                **data,
+                "normalized": normalize(tt, data["score"])
+            }
+
+    # 5개 레이더 차트 도메인 집계
+    def avg_norm(*keys):
+        vals = [profile[k]["normalized"] for k in keys if k in profile]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    radar = {
+        "emotional_health":   avg_norm("phq9", "gad7"),
+        "stress_resilience":  avg_norm("stress", "ego"),
+        "self_esteem":        avg_norm("rses"),
+        "attachment_security":avg_norm("ecr_anxiety", "ecr_avoid"),
+        "relationship_health":avg_norm("relationship"),
+        "emotion_regulation": avg_norm("ders"),
+    }
+
+    # 취약/강점 영역 판별
+    radar_named = {k: v for k, v in radar.items() if v is not None}
+    weak_areas   = sorted([(k, v) for k, v in radar_named.items() if v < 45], key=lambda x: x[1])
+    strong_areas = sorted([(k, v) for k, v in radar_named.items() if v >= 65], key=lambda x: -x[1])
+
+    return {
+        "latest_tests": latest,
+        "profile": profile,
+        "radar": radar,
+        "weak_areas":   [{"domain": k, "score": v} for k, v in weak_areas],
+        "strong_areas": [{"domain": k, "score": v} for k, v in strong_areas],
+        "completed_types": list(latest.keys()),
+    }
+
+
 # ─── 상담 세션 ─────────────────────────────────────────────
 
 def _decrypt_session(session: CounselSession) -> CounselSession:
