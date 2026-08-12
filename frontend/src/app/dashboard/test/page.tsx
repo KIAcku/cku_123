@@ -554,12 +554,12 @@ const i18n: Record<string, any> = {
 const TEST_META: Record<string, { color: string; icon: string; category: string; levelMaxes: number[] }> = {
   phq9:         { color: '#4F8EF7', icon: '💙', category: 'clinical',    levelMaxes: [4, 9, 14, 19, 27] },
   gad7:         { color: '#6c63ff', icon: '💜', category: 'clinical',    levelMaxes: [4, 9, 14, 21] },
-  stress:       { color: '#20c997', icon: '💚', category: 'clinical',    levelMaxes: [9, 19, 24, 30] },
+  stress:       { color: '#20c997', icon: '💚', category: 'clinical',    levelMaxes: [14, 29, 44, 60] },  // 20q×3 → max60
   ecr:          { color: '#f472b6', icon: '💗', category: 'attachment',  levelMaxes: [24, 36, 48, 72] },
-  rses:         { color: '#fbbf24', icon: '⭐', category: 'selfgrowth',  levelMaxes: [25, 35, 40] },
-  relationship: { color: '#f97316', icon: '💕', category: 'attachment',  levelMaxes: [22, 33, 50] },
-  ders:         { color: '#a78bfa', icon: '🌊', category: 'selfgrowth',  levelMaxes: [22, 33, 50] },
-  ego:          { color: '#34d399', icon: '🧱', category: 'selfgrowth',  levelMaxes: [19, 26, 32] },
+  rses:         { color: '#fbbf24', icon: '⭐', category: 'selfgrowth',  levelMaxes: [30, 45, 60] },      // 15q×4 → max60
+  relationship: { color: '#f97316', icon: '💕', category: 'attachment',  levelMaxes: [40, 65, 100] },     // 20q×5 → max100
+  ders:         { color: '#a78bfa', icon: '🌊', category: 'selfgrowth',  levelMaxes: [32, 52, 80] },      // 16q×5 → max80
+  ego:          { color: '#34d399', icon: '🧱', category: 'selfgrowth',  levelMaxes: [37, 56, 75] },      // 15q×5 → max75
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -569,8 +569,14 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const REVERSE_SCORED: Record<string, number[]> = {
-  rses:         [2, 4, 7, 8, 9],   // 0-indexed
-  relationship: [2, 7],
+  // RSES 15문항: 역채점 항목 (0-indexed: 2,4,7,8,9,11,13)
+  rses:         [2, 4, 7, 8, 9, 11, 13],
+  // 연애패턴 20문항: 역채점 항목 (0-indexed: 2,7,12,15)
+  relationship: [2, 7, 12, 15],
+  // 자아경계 15문항: 역채점 항목 (0-indexed: 2,3,5,9,12,13)
+  ego:          [2, 3, 5, 9, 12, 13],
+  // DERS 16문항: 역채점 항목 (0-indexed: 11)
+  ders:         [11],
 };
 
 function computeScore(testKey: string, answers: number[], optionKey: string): number {

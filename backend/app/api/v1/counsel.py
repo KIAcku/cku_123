@@ -123,15 +123,15 @@ async def get_integrated_report(
 
     # 도메인별 점수 정규화 (0~100 스케일)
     NORMALIZERS = {
-        "phq9":        {"max": 27, "invert": True},
-        "gad7":        {"max": 21, "invert": True},
-        "stress":      {"max": 30, "invert": True},
-        "rses":        {"max": 40, "invert": False},
-        "ecr_anxiety": {"max": 36, "invert": True},
-        "ecr_avoid":   {"max": 36, "invert": True},
-        "relationship":{"max": 40, "invert": True},
-        "ders":        {"max": 40, "invert": True},
-        "ego":         {"max": 32, "invert": False},
+        "phq9":        {"max": 27,  "invert": True},   # 9q × 3
+        "gad7":        {"max": 21,  "invert": True},   # 7q × 3
+        "stress":      {"max": 60,  "invert": True},   # 20q × 3
+        "rses":        {"max": 60,  "invert": False},  # 15q × 4
+        "ecr_anxiety": {"max": 36,  "invert": True},   # 6 anxiety × 6
+        "ecr_avoid":   {"max": 36,  "invert": True},   # 6 avoidant × 6
+        "relationship":{"max": 100, "invert": True},  # 20q × 5
+        "ders":        {"max": 80,  "invert": True},   # 16q × 5
+        "ego":         {"max": 75,  "invert": False},  # 15q × 5
     }
 
     ecr_data = latest.get("ecr")
