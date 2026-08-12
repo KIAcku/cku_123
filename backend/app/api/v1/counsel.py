@@ -96,19 +96,6 @@ async def save_test(
     await db.refresh(result)
     return result
 
-@router.get("/tests", response_model=List[TestResultOut])
-async def get_tests(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    res = await db.execute(
-        select(TestResult).where(TestResult.user_id == current_user.id)
-        .order_by(TestResult.created_at.desc())
-    )
-    return res.scalars().all()
-
-
-# ─── 통합 심리 프로파일 리포트 ──────────────────────────────────
 @router.get("/tests/integrated-report")
 async def get_integrated_report(
     db: AsyncSession = Depends(get_db),
@@ -136,10 +123,10 @@ async def get_integrated_report(
 
     # 도메인별 점수 정규화 (0~100 스케일)
     NORMALIZERS = {
-        "phq9":        {"max": 27, "invert": True},   # 높을수록 나쁨
+        "phq9":        {"max": 27, "invert": True},
         "gad7":        {"max": 21, "invert": True},
         "stress":      {"max": 30, "invert": True},
-        "rses":        {"max": 40, "invert": False},   # 높을수록 좋음
+        "rses":        {"max": 40, "invert": False},
         "ecr_anxiety": {"max": 36, "invert": True},
         "ecr_avoid":   {"max": 36, "invert": True},
         "relationship":{"max": 40, "invert": True},
@@ -147,11 +134,9 @@ async def get_integrated_report(
         "ego":         {"max": 32, "invert": False},
     }
 
-    # ECR은 answers에서 불안/회피 차원 별도 분리
     ecr_data = latest.get("ecr")
     if ecr_data and ecr_data.get("answers"):
         answers = ecr_data["answers"]
-        # 홀수 인덱스(0,2,4,6,8,10) = 불안, 짝수(1,3,5,7,9,11) = 회피
         anxiety_score = sum(answers[i] for i in range(0, min(12, len(answers)), 2))
         avoid_score   = sum(answers[i] for i in range(1, min(12, len(answers)), 2))
         latest["ecr_anxiety"] = {"test_type": "ecr_anxiety", "score": anxiety_score, "level": ecr_data["level"], "created_at": ecr_data["created_at"]}
@@ -172,7 +157,6 @@ async def get_integrated_report(
                 "normalized": normalize(tt, data["score"])
             }
 
-    # 5개 레이더 차트 도메인 집계
     def avg_norm(*keys):
         vals = [profile[k]["normalized"] for k in keys if k in profile]
         return round(sum(vals) / len(vals), 1) if vals else None
@@ -186,7 +170,6 @@ async def get_integrated_report(
         "emotion_regulation": avg_norm("ders"),
     }
 
-    # 취약/강점 영역 판별
     radar_named = {k: v for k, v in radar.items() if v is not None}
     weak_areas   = sorted([(k, v) for k, v in radar_named.items() if v < 45], key=lambda x: x[1])
     strong_areas = sorted([(k, v) for k, v in radar_named.items() if v >= 65], key=lambda x: -x[1])
@@ -199,6 +182,18 @@ async def get_integrated_report(
         "strong_areas": [{"domain": k, "score": v} for k, v in strong_areas],
         "completed_types": list(latest.keys()),
     }
+
+
+@router.get("/tests", response_model=List[TestResultOut])
+async def get_tests(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    res = await db.execute(
+        select(TestResult).where(TestResult.user_id == current_user.id)
+        .order_by(TestResult.created_at.desc())
+    )
+    return res.scalars().all()
 
 
 # ─── 상담 세션 ─────────────────────────────────────────────

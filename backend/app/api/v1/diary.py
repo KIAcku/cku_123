@@ -65,12 +65,34 @@ async def get_diary_stats(
         for row in emotion_result.all()
     ]
 
+    # ─── 연속 기록(streak) 계산 ───────────────────────────────
+    all_dates_result = await db.execute(
+        select(DiaryEntry.created_at)
+        .where(DiaryEntry.user_id == current_user.id)
+        .order_by(DiaryEntry.created_at.desc())
+    )
+    all_dates = [row[0].date() for row in all_dates_result.all() if row[0]]
+    written_days = sorted(set(all_dates), reverse=True)  # 중복 제거 + 내림차순
+
+    from datetime import timedelta
+    today = date.today()
+    streak = 0
+    check_date = today
+    for d in written_days:
+        if d == check_date:
+            streak += 1
+            check_date = check_date - timedelta(days=1)
+        elif d < check_date:
+            break
+
     return DiaryStats(
         total=total,
         this_month=this_month,
         emotion_distribution=emotion_distribution,
-        streak_days=0  # 추후 구현
+        streak_days=streak
     )
+
+
 
 @router.get("", response_model=List[DiaryResponse])
 async def get_diaries(

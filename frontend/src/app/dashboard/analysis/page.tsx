@@ -172,8 +172,10 @@ export default function AnalysisPage() {
       const res = await fetch(`${API}/analysis/emotion-trend`, { headers });
       if (res.ok) {
         const raw = await res.json();
+        // 백엔드 응답: { trend: [{date, avg_score}] }
+        const list = Array.isArray(raw) ? raw : (raw.trend ?? []);
         setTrendData(
-          raw.map((d: any) => ({
+          list.map((d: any) => ({
             date: d.date
               ? new Date(d.date).toLocaleDateString(t.date_locale, { month: '2-digit', day: '2-digit' }).replace('. ', '/').replace('.', '')
               : d.date,
@@ -188,9 +190,11 @@ export default function AnalysisPage() {
       const res = await fetch(`${API}/analysis/emotion-by-day`, { headers });
       if (res.ok) {
         const raw = await res.json();
+        // 백엔드 응답: { by_day: [{day, avg_score, count}] }
+        const list = Array.isArray(raw) ? raw : (raw.by_day ?? []);
         setDayData(
-          raw.map((d: any, i: number) => ({
-            day: t.day_labels[d.day_of_week ?? i] ?? d.day,
+          list.map((d: any, i: number) => ({
+            day: typeof d.day === 'string' ? d.day : (t.day_labels[d.day_of_week ?? i] ?? d.day),
             score: parseFloat(d.avg_score ?? d.score ?? 0),
           }))
         );
@@ -202,11 +206,13 @@ export default function AnalysisPage() {
       const res = await fetch(`${API}/analysis/emotion-dist`, { headers });
       if (res.ok) {
         const raw = await res.json();
+        // 백엔드 응답: { total: N, distribution: [{emotion, count, ratio}] }
+        const list: any[] = Array.isArray(raw) ? raw : (raw.distribution ?? []);
         setDistData(
-          Object.entries(raw).map(([key, val]: [string, any]) => ({
-            name: t.emotion_labels[key] ?? key,
-            value: typeof val === 'number' ? val : parseFloat(val),
-            color: EMOTION_COLORS[key] ?? '#94a3b8',
+          list.map((item: any) => ({
+            name: t.emotion_labels[item.emotion] ?? item.emotion ?? item.name,
+            value: typeof item.ratio === 'number' ? item.ratio : parseFloat(item.ratio ?? item.value ?? 0),
+            color: EMOTION_COLORS[item.emotion ?? item.name] ?? '#94a3b8',
           }))
         );
       }
@@ -219,6 +225,7 @@ export default function AnalysisPage() {
         const raw = await res.json();
         let normalized: any[] = [];
         if (Array.isArray(raw) && raw.length > 0 && 'test_type' in raw[0]) {
+
           const byDate: Record<string, any> = {};
           raw.forEach((r: any) => {
             if (!byDate[r.date]) byDate[r.date] = { date: r.date };
