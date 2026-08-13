@@ -74,8 +74,7 @@ async def get_diary_stats(
     all_dates = [row[0].date() for row in all_dates_result.all() if row[0]]
     written_days = sorted(set(all_dates), reverse=True)  # 중복 제거 + 내림차순
 
-    from datetime import timedelta
-    # [FIX] 서버 로컨 시간이 아닌 UTC 기준 오늘 사용
+    # [FIX] 서버 로컬 시간이 아닌 UTC 기준 오늘 사용
     today = datetime.now(timezone.utc).date()
     streak = 0
     check_date = today

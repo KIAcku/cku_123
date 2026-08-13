@@ -311,14 +311,14 @@ async def send_message(
             detected_keyword = kw
             break
     if detected_keyword:
-        from app.core.database import async_session_factory  # type: ignore
+        from app.core.database import AsyncSessionLocal
         try:
-            async with async_session_factory() as alert_db:
+            async with AsyncSessionLocal() as alert_db:
                 alert = AlertLog(session_id=session_id, message_content=data.content, keyword=detected_keyword)
                 alert_db.add(alert)
                 await alert_db.commit()
         except Exception:
-            pass  # 알림 DB 실패는 로그만 기록, 메시지 저장은 계속
+            pass  # 알림 DB 실패는 메시지 저장에 영향 없음
 
     # 학생 메시지 저장
     user_msg = CounselMessage(

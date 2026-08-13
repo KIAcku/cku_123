@@ -5,7 +5,6 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
-from pydantic import constr
 import random
 import string
 
@@ -295,11 +294,11 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     verified = verification_res.scalars().first()
     if not verified:
         raise HTTPException(status_code=403, detail="이메일 인증을 먼저 완료해주세요.")
-    # 인증 후 10분 이내만 허용
-    verified_at = verified.expires_at  # expires_at이 인증 시점의 만료 시각
-    if verified_at.tzinfo is None:
-        verified_at = verified_at.replace(tzinfo=timezone.utc)
-    if (now - verified_at).total_seconds() > 1200:  # 10분 + 여유 10분 = 20분
+    # 인증 완료 후 20분 이내만 비밀번호 변경 허용
+    verified_created = verified.created_at
+    if verified_created.tzinfo is None:
+        verified_created = verified_created.replace(tzinfo=timezone.utc)
+    if (now - verified_created).total_seconds() > 1200:  # 20분
         raise HTTPException(status_code=403, detail="인증이 만료되었습니다. 다시 인증해주세요.")
 
     if len(data.new_password) < 8:
