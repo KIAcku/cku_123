@@ -9,7 +9,7 @@ from app.schemas.schemas import DiaryCreate, DiaryUpdate, DiaryResponse, DiarySt
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.encryption import encrypt, decrypt
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 
 router = APIRouter()
 
@@ -43,9 +43,9 @@ async def get_diary_stats(
     )
     total = total_result.scalar() or 0
 
-    # 이번 달 일기 수
-    now = datetime.utcnow()
-    month_start = datetime(now.year, now.month, 1)
+    # 이번 달 일기 수 — UTC 기준 (데이터 일관성)
+    now = datetime.now(timezone.utc)
+    month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     month_result = await db.execute(
         select(func.count(DiaryEntry.id)).where(
             DiaryEntry.user_id == current_user.id,
@@ -75,7 +75,8 @@ async def get_diary_stats(
     written_days = sorted(set(all_dates), reverse=True)  # 중복 제거 + 내림차순
 
     from datetime import timedelta
-    today = date.today()
+    # [FIX] 서버 로컨 시간이 아닌 UTC 기준 오늘 사용
+    today = datetime.now(timezone.utc).date()
     streak = 0
     check_date = today
     for d in written_days:
@@ -96,13 +97,19 @@ async def get_diary_stats(
 
 @router.get("", response_model=List[DiaryResponse])
 async def get_diaries(
+    limit: int = 50,   # [FIX] 페이지네이션 추가 — 무제한 메모리 사용 방지
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # limit 상한 강제 (max 200)
+    limit = min(max(1, limit), 200)
     result = await db.execute(
         select(DiaryEntry)
         .where(DiaryEntry.user_id == current_user.id)
         .order_by(DiaryEntry.created_at.desc())
+        .limit(limit)
+        .offset(offset)
     )
     entries = result.scalars().all()
     # 🔐 모든 일기 내용 복호화
@@ -116,11 +123,18 @@ async def get_diary_calendar(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    start = datetime(year, month, 1)
+    # [FIX] 입력값 검증 — 잘못된 값 시 500 대신 422 반환
+    if not (1 <= month <= 12):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="month는 1~12 사이여야 합니다.")
+    if not (2000 <= year <= 2100):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="year는 2000~2100 사이여야 합니다.")
+    start = datetime(year, month, 1, tzinfo=timezone.utc)
     if month == 12:
-        end = datetime(year + 1, 1, 1)
+        end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
     else:
-        end = datetime(year, month + 1, 1)
+        end = datetime(year, month + 1, 1, tzinfo=timezone.utc)
     res = await db.execute(
         select(DiaryEntry.created_at, DiaryEntry.emotion)
         .where(DiaryEntry.user_id == current_user.id, DiaryEntry.created_at >= start, DiaryEntry.created_at < end)
@@ -165,7 +179,7 @@ async def update_diary(
         entry.emotion = diary_in.emotion
     if diary_in.emotion_score is not None:
         entry.emotion_score = diary_in.emotion_score
-    entry.updated_at = datetime.utcnow()
+    entry.updated_at = datetime.now(timezone.utc)
     db.add(entry)
     await db.commit()
     await db.refresh(entry)

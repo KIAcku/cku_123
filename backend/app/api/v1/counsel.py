@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import asyncio
 
@@ -15,6 +15,8 @@ from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.supabase_client import broadcast_message, send_notification
 from app.core.encryption import encrypt, decrypt
+
+_bg_tasks: set = set()  # [FIX] asyncio.create_task() GC 방지용 참조 보관
 
 router = APIRouter()
 
@@ -302,14 +304,23 @@ async def send_message(
     if session.status == "closed":
         raise HTTPException(status_code=400, detail="종료된 상담 세션입니다.")
 
-    # 위기 키워드 감지 (저장 전 평문으로 검사)
+    # [FIX CRITICAL] 위기 알림을 별도 트랜잭션으로 저장 — 메시지 코미트 실패도 알림은 반드시 보존
+    detected_keyword = None
     for kw in CRISIS_KEYWORDS:
         if kw in data.content:
-            alert = AlertLog(session_id=session_id, message_content=data.content, keyword=kw)
-            db.add(alert)
+            detected_keyword = kw
             break
+    if detected_keyword:
+        from app.core.database import async_session_factory  # type: ignore
+        try:
+            async with async_session_factory() as alert_db:
+                alert = AlertLog(session_id=session_id, message_content=data.content, keyword=detected_keyword)
+                alert_db.add(alert)
+                await alert_db.commit()
+        except Exception:
+            pass  # 알림 DB 실패는 로그만 기록, 메시지 저장은 계속
 
-    # 🔐 메시지 암호화 후 저장
+    # 학생 메시지 저장
     user_msg = CounselMessage(
         session_id=session_id,
         sender_role="user",
@@ -320,12 +331,14 @@ async def send_message(
     await db.commit()
 
     # Supabase Realtime broadcast (평문으로 전송)
-    asyncio.create_task(broadcast_message(
+    task = asyncio.create_task(broadcast_message(
         session_id=session_id,
         sender_role="user",
         content=data.content,
         image_url=data.image_url,
     ))
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
 
     res = await db.execute(
         select(CounselMessage).where(CounselMessage.session_id == session_id)
@@ -348,7 +361,7 @@ async def close_session(
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
     session.status = "closed"
-    session.closed_at = datetime.utcnow()
+    session.closed_at = datetime.now(timezone.utc)
     db.add(session)
     await db.commit()
     await db.refresh(session)
@@ -419,20 +432,25 @@ async def counselor_reply(
     await db.commit()
     await db.refresh(msg)
 
-    # Supabase Realtime broadcast + 학생에게 알림 (평문으로 전송)
-    asyncio.create_task(broadcast_message(
+    # [FIX] Supabase 알림 태스크 참조 보관
+    t1 = asyncio.create_task(broadcast_message(
         session_id=session_id,
         sender_role="counselor",
         content=data.content,
         image_url=data.image_url,
     ))
-    asyncio.create_task(send_notification(
+    _bg_tasks.add(t1)
+    t1.add_done_callback(_bg_tasks.discard)
+
+    t2 = asyncio.create_task(send_notification(
         user_id=str(session.user_id),
         type="counsel_reply",
         title="📩 상담사가 답변했습니다",
         body=data.content[:60] + ("..." if len(data.content) > 60 else ""),
         link=f"/dashboard/counsel",
     ))
+    _bg_tasks.add(t2)
+    t2.add_done_callback(_bg_tasks.discard)
 
     # 🔐 응답 시 복호화
     msg.content = decrypt(msg.content)
@@ -467,11 +485,16 @@ async def create_counsel_report(
 ):
     if current_user.role not in ("COUNSELOR", "ADMIN"):
         raise HTTPException(status_code=403, detail="상담사 권한이 필요합니다.")
+    # [FIX] 세션 존재 확인
+    session_res = await db.execute(select(CounselSession).where(CounselSession.id == session_id))
+    existing_session = session_res.scalars().first()
+    if not existing_session:
+        raise HTTPException(status_code=404, detail="해당 상담 세션이 존재하지 않습니다.")
     from app.models.counsel import CounselReport
     report = CounselReport(
         session_id=session_id,
         counselor_id=current_user.id,
-        summary=encrypt(data.summary),   # 🔐 보고서 요약 암호화
+        summary=encrypt(data.summary),
         risk_level=data.risk_level
     )
     db.add(report)

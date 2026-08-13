@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from pydantic import constr
 import random
 import string
 
@@ -22,6 +23,8 @@ from app.api.dependencies import get_current_user
 router = APIRouter()
 
 VALID_ROLES = {"STUDENT", "TEACHER", "COUNSELOR", "ADMIN"}
+# 회원가입 시 자가 부여 가능한 역할 — TEACHER/COUNSELOR/ADMIN은 불가
+PUBLIC_SIGNUP_ROLES = {"STUDENT"}
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -36,8 +39,8 @@ async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         if nick_result.scalars().first():
             raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
 
-    # 역할 유효성 검사
-    role = user_in.role if user_in.role in VALID_ROLES else "STUDENT"
+    # [SECURITY] 일반 가입으로는 STUDENT만 허용 — 관리자가 직접 역할 부여해야 함
+    role = "STUDENT"
 
     new_user = User(
         email=user_in.email,
@@ -75,11 +78,15 @@ async def read_users_me(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    current_user.last_seen_at = datetime.utcnow()
-    current_user.is_online = True
-    db.add(current_user)
-    await db.commit()
-    await db.refresh(current_user)
+    # last_seen_at 업데이트 (5분 이상 지났을 때만 DB 쓰기 — 불필요한 write 방지)
+    now = datetime.now(timezone.utc)
+    last_seen = current_user.last_seen_at
+    if last_seen is None or (now - (last_seen if last_seen.tzinfo else last_seen.replace(tzinfo=timezone.utc))).total_seconds() > 300:
+        current_user.last_seen_at = now
+        current_user.is_online = True
+        db.add(current_user)
+        await db.commit()
+        await db.refresh(current_user)
     return current_user
 
 @router.put("/me", response_model=UserResponse)
@@ -123,8 +130,9 @@ async def get_my_stats(
     comment_count_r = await db.execute(
         select(func.count(Comment.id)).where(Comment.user_id == current_user.id)
     )
+    # [FIX] 전체 신고 수가 아닌 해당 유저의 신고 수만 반환
     report_count_r = await db.execute(
-        select(func.count(Report.id))
+        select(func.count(Report.id)).where(Report.user_id == current_user.id)
     )
     return UserStats(
         diary_count=diary_count_r.scalar() or 0,
@@ -137,7 +145,11 @@ async def get_my_stats(
 
 class PasswordChange(BaseModel):
     current_password: str
-    new_password: str
+    new_password: str  # 최소 8자 — 프론트에서도 검증하지만 백엔드에서도 확인
+
+    def validate(self):
+        if len(self.new_password) < 8:
+            raise ValueError("새 비밀번호는 최소 8자 이상이어야 합니다.")
 
 @router.put("/me/password")
 async def change_password(
@@ -147,6 +159,8 @@ async def change_password(
 ):
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="현재 비밀번호가 올바르지 않습니다.")
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="새 비밀번호는 최소 8자 이상이어야 합니다.")
     current_user.hashed_password = get_password_hash(data.new_password)
     db.add(current_user)
     await db.commit()
@@ -179,7 +193,7 @@ class SendCodeRequest(BaseModel):
 @router.post("/send-code")
 async def send_verification_code(data: SendCodeRequest, db: AsyncSession = Depends(get_db)):
     code = ''.join(random.choices(string.digits, k=6))
-    expires = datetime.utcnow() + timedelta(minutes=10)
+    expires = datetime.now(timezone.utc) + timedelta(minutes=10)
     verification = EmailVerification(
         email=data.email,
         code=code,
@@ -188,8 +202,9 @@ async def send_verification_code(data: SendCodeRequest, db: AsyncSession = Depen
     )
     db.add(verification)
     await db.commit()
-    # Try to send email, fallback to console
+    # 이메일 발송 시도
     from app.core.config import settings
+    sent = False
     if settings.SMTP_HOST:
         try:
             import aiosmtplib
@@ -206,10 +221,15 @@ async def send_verification_code(data: SendCodeRequest, db: AsyncSession = Depen
                 password=settings.SMTP_PASS,
                 start_tls=True
             )
+            sent = True
         except Exception as e:
-            print(f"[EMAIL ERROR] {e} | Code for {data.email}: {code}")
-    else:
-        print(f"[마음이음 인증코드] {data.email} → {code} (10분 유효)")
+            # [SECURITY] 코드를 로그에 출력하지 않음 — 이메일만 기록
+            print(f"[EMAIL ERROR] {data.email}에 발송 실패: {type(e).__name__}")
+    if not sent:
+        # [DEV] 개발 환경에서만 stdout으로 코드 확인 (프로덕션에서는 SMTP_HOST 설정 필요)
+        import os
+        if os.getenv("APP_ENV", "development") == "development":
+            print(f"[DEV 인증코드] {data.email} 용 코드가 DB에 저장됨 (SMTP 미설정)")
     return {"message": "인증 코드가 발송되었습니다."}
 
 class VerifyCodeRequest(BaseModel):
@@ -219,19 +239,24 @@ class VerifyCodeRequest(BaseModel):
 
 @router.post("/verify-code")
 async def verify_code(data: VerifyCodeRequest, db: AsyncSession = Depends(get_db)):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     res = await db.execute(
         select(EmailVerification).where(
             EmailVerification.email == data.email,
             EmailVerification.code == data.code,
             EmailVerification.purpose == data.purpose,
             EmailVerification.is_used == False,
-            EmailVerification.expires_at > now
         ).order_by(EmailVerification.created_at.desc())
     )
     verification = res.scalars().first()
     if not verification:
         raise HTTPException(status_code=400, detail="인증 코드가 올바르지 않거나 만료되었습니다.")
+    # expires_at 비교 (naive/aware 호환)
+    expires = verification.expires_at
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < now:
+        raise HTTPException(status_code=400, detail="인증 코드가 만료되었습니다.")
     verification.is_used = True
     db.add(verification)
     await db.commit()
@@ -258,6 +283,28 @@ class ResetPasswordRequest(BaseModel):
 
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    # [SECURITY CRITICAL FIX] 반드시 verify-code 완료 여부 확인 후 변경 허용
+    now = datetime.now(timezone.utc)
+    verification_res = await db.execute(
+        select(EmailVerification).where(
+            EmailVerification.email == data.email,
+            EmailVerification.purpose == "reset_password",
+            EmailVerification.is_used == True,
+        ).order_by(EmailVerification.created_at.desc())
+    )
+    verified = verification_res.scalars().first()
+    if not verified:
+        raise HTTPException(status_code=403, detail="이메일 인증을 먼저 완료해주세요.")
+    # 인증 후 10분 이내만 허용
+    verified_at = verified.expires_at  # expires_at이 인증 시점의 만료 시각
+    if verified_at.tzinfo is None:
+        verified_at = verified_at.replace(tzinfo=timezone.utc)
+    if (now - verified_at).total_seconds() > 1200:  # 10분 + 여유 10분 = 20분
+        raise HTTPException(status_code=403, detail="인증이 만료되었습니다. 다시 인증해주세요.")
+
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="비밀번호는 최소 8자 이상이어야 합니다.")
+
     res = await db.execute(select(User).where(User.email == data.email, User.is_active == True))
     user = res.scalars().first()
     if not user:

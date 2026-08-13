@@ -4,9 +4,11 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel
 import asyncio
+
+_bg_tasks: set = set()  # [FIX] asyncio.create_task() GC 방지용 참조 보관
 
 from app.core.database import get_db
 from app.models.community import Post, Comment, PostLike, CommentLike
@@ -55,7 +57,8 @@ async def create_post(
 @router.get("", response_model=List[PostResponse])
 async def get_posts(
     category: str = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # [FIX] 인증 필수 — 학생 민감 데이터 외부 노출 방지
 ):
     query = select(Post).order_by(Post.created_at.desc())
     if category and category != "all":
@@ -64,7 +67,11 @@ async def get_posts(
     return result.scalars().all()
 
 @router.get("/{post_id}", response_model=PostResponse)
-async def get_post(post_id: str, db: AsyncSession = Depends(get_db)):
+async def get_post(
+    post_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # [FIX] 인증 필수
+):
     result = await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
     if not post:
@@ -90,7 +97,7 @@ async def update_post(
         post.content = post_in.content
     if post_in.category is not None:
         post.category = post_in.category
-    post.updated_at = datetime.utcnow()
+    post.updated_at = datetime.now(timezone.utc)
     db.add(post)
     await db.commit()
     await db.refresh(post)
@@ -194,18 +201,24 @@ async def create_comment(
 
     # 글 작성자에게 알림 전송 (자기 글 댓글이 아닐 때)
     if str(post.user_id) != str(current_user.id):
-        asyncio.create_task(send_notification(
+        task = asyncio.create_task(send_notification(
             user_id=str(post.user_id),
             type="comment",
             title="💬 새 댓글이 달렸습니다",
             body=f"{current_user.nickname or '익명'}: {comment_in.content[:50]}",
             link="/dashboard/community",
         ))
+        _bg_tasks.add(task)  # [FIX] GC 로 심작 전 수집 안됨 방지
+        task.add_done_callback(_bg_tasks.discard)
 
     return comment
 
 @router.get("/{post_id}/comments", response_model=List[CommentResponse])
-async def get_comments(post_id: str, db: AsyncSession = Depends(get_db)):
+async def get_comments(
+    post_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # [FIX] 인증 필수
+):
     result = await db.execute(
         select(Comment).where(Comment.post_id == post_id).order_by(Comment.created_at.asc())
     )
@@ -240,7 +253,10 @@ async def toggle_like_comment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(Comment).where(Comment.id == comment_id))
+    # [FIX] IDOR 방지: post_id 관계도 함께 확인
+    result = await db.execute(
+        select(Comment).where(Comment.id == comment_id, Comment.post_id == post_id)
+    )
     comment = result.scalars().first()
     if not comment:
         raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
