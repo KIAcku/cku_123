@@ -252,10 +252,10 @@ const i18n: Record<string, any> = {
         ],
 
         levels: [
-
-          { level: 'strong',   label: '강한 자아 경계', desc: '뚜렷한 자기 정체성과 건강한 경계선을 가지고 있습니다.', action: '현재의 자아 강도를 유지하면서 타인과의 관계에서도 유연함을 발휘해보세요.' },
-          { level: 'moderate', label: '보통 수준',      desc: '상황에 따라 자기 경계가 흔들릴 수 있습니다.', action: '"아니오"라고 말하는 연습을 해보세요. 나의 가치관 목록을 작성해보세요.' },
+          // [FIX] 높은 점수 = 강한 자아 → 낮은 점수부터 weak, 높은 점수가 strong
           { level: 'weak',     label: '약한 자아 경계', desc: '자신의 정체성이 불분명하고 타인에게 휩쓸리기 쉽습니다.', action: '정체성 탐구 저널링과 경계 설정 훈련을 해보세요. 상담을 통한 자아 발견을 권장합니다.' },
+          { level: 'moderate', label: '보통 수준',      desc: '상황에 따라 자기 경계가 흔들릴 수 있습니다.', action: '"아니오"라고 말하는 연습을 해보세요. 나의 가치관 목록을 작성해보세요.' },
+          { level: 'strong',   label: '강한 자아 경계', desc: '뚜렷한 자기 정체성과 건강한 경계선을 가지고 있습니다.', action: '현재의 자아 강도를 유지하면서 타인과의 관계에서도 유연함을 발휘해보세요.' },
         ],
       },
     },
@@ -465,9 +465,9 @@ const i18n: Record<string, any> = {
           'I can assert my position clearly in conflict situations',
         ],
         levels: [
-          { level: 'strong',   label: 'Strong Ego',    desc: 'You have a clear identity and healthy personal boundaries.', action: 'Maintain your strong sense of self while staying flexible in relationships.' },
-          { level: 'moderate', label: 'Moderate',      desc: 'Boundaries may waver depending on the situation.', action: 'Practice saying "no." Write your personal values list.' },
           { level: 'weak',     label: 'Weak Ego',      desc: 'Identity is unclear and you may be easily influenced by others.', action: 'Identity journaling and boundary-setting training are recommended. Therapy can help.' },
+          { level: 'moderate', label: 'Moderate',      desc: 'Boundaries may waver depending on the situation.', action: 'Practice saying "no." Write your personal values list.' },
+          { level: 'strong',   label: 'Strong Ego',    desc: 'You have a clear identity and healthy personal boundaries.', action: 'Maintain your strong sense of self while staying flexible in relationships.' },
         ],
       },
     },
@@ -507,7 +507,7 @@ const i18n: Record<string, any> = {
       rses: { title: 'ローゼンバーグ自尊感情尺度', desc: '各項目が現在の自分の状態とどの程度一致しているか答えてください。', options_key: 'options_agree4', questions: ['私は少なくとも他の人と同じくらい価値ある人間だと感じる', '私はよい素質をたくさん持っている', '私は全体的に失敗した人間だと感じる', '私はほとんどの人と同じようにことをうまくやることができる', '私には誇りに思えるものがあまりない', '私は自分に対して好意的な態度をもっている', '私は自分自身に対して満足している', '私はもっと自分を尊重できたらと思う', '私はときどき自分がまったく無力だと感じる', '私はときどき自分がよくない人間だと思う'], levels: [{ level: 'high', label: '高い自尊感情', desc: '自分を肯定的に見ており、健全な自己像を持っています。', action: '現在の肯定的な自己観を維持しながら、他者にも温かさを分けてあげてください。' }, { level: 'medium', label: '普通の自尊感情', desc: '状況によって自尊感情の波があります。', action: '感謝日記を書いてみましょう。小さな成果を認めてあげてください。' }, { level: 'low', label: '低い自尊感情', desc: '自己批判が多く、自信が不足しています。', action: 'セルフコンパッションとCBTによる自動思考修正が役立ちます。相談をお勧めします。' }] },
       relationship: { title: '恋愛・親密さパターン検査', desc: '恋愛または親密な関係でのパターンを答えてください。', options_key: 'options_likert5', questions: ['恋人と対立が生じると感情的になりやすい', '恋人に自分の感情やニーズを正直に言うのが難しい', '恋人は私をよく理解してくれていると感じる（逆採点）', '一人でいるとき、よく孤独を感じる', '恋人と一緒でも完全につながっていると感じない', '恋人が期待に応えないと大きく失望したり怒ったりする', '関係でいつも自分の方が多く努力している感じがする', '恋人との関係は全体的に満足している（逆採点）', '親密な関係でよく傷つく', '別れや関係終了が非常に怖い'], levels: [{ level: 'healthy', label: '健全な関係パターン', desc: 'お互いを尊重し、コミュニケーションをとる健全な関係パターンを持っています。', action: '現在の健全なパターンを維持し、パートナーとの深い対話をもっと増やしてみましょう。' }, { level: 'moderate', label: '改善の余地あり', desc: '関係に一部困難がありますが、改善可能です。', action: '関係心理の本を読んだり、カップルカウンセリングを検討してみましょう。' }, { level: 'challenging', label: '関係パターンの見直しが必要', desc: '繰り返す関係パターンがあり、専門的な助けが必要です。', action: '個人カウンセリングを通じて関係パターンの根源を探索してみましょう。' }] },
       ders: { title: '感情調節困難度尺度（DERS-10）', desc: '普段、感情を感じて対処する方法について答えてください。', options_key: 'options_likert5', questions: ['自分がどんな感情を感じているのかよくわからないことが多い', '感情が激しくなると、コントロールするのが難しい', '気分が悪いとき、その感情から抜け出すのが難しい', '悲しんだり怒ったりすると、自分が恥ずかしく感じる', '気分が悪いとき、集中するのが難しい', '感情が激しくなると、衝動的に行動してしまう', '怒ったとき、状況をコントロールするのが難しい', '否定的な感情にうまく対処できていないと感じる', '自分の感情が強すぎて対処しきれない', '感情が生じると、それが自分の行動を支配してしまう'], levels: [{ level: 'good', label: '良好な感情調節', desc: '感情を効果的に認識し、コントロールできます。', action: 'マインドフルネス練習で現在の感情調節能力をさらに強化してみましょう。' }, { level: 'moderate', label: '中程度の困難', desc: '一部の状況で感情調節に困難を感じます。', action: 'DBTのスキル（苦痛耐性スキルなど）の練習が役立ちます。' }, { level: 'high', label: '高い感情調節困難', desc: '感情調節にかなりの困難があります。', action: '専門家の助けを借りてください。DBTや感情焦点化療法（EFT）が非常に効果的です。' }] },
-      ego: { title: '自我境界・強度尺度', desc: '自分のアイデンティティと自己表現について答えてください。', options_key: 'options_likert5', questions: ['自分が何を求めているかを明確に知っている', '他者の意見に簡単に流されない自分だけの価値観がある', '他人からの頼みを断るのが非常に難しい', '自分の感情と他者の感情を区別するのが難しいことがある', '自分がどんな人間かについての明確なアイデンティティがある', '周囲の人の期待に合わせて自分を変える傾向がある', '自分の境界線を他者に明確に伝えることができる', '対立状況で自分の立場を明確に表現できる'], levels: [{ level: 'strong', label: '強い自我境界', desc: '明確な自己アイデンティティと健全な境界線を持っています。', action: '現在の自我の強さを維持しながら、関係における柔軟性も発揮してみましょう。' }, { level: 'moderate', label: '普通のレベル', desc: '状況によって自己境界が揺らぐことがあります。', action: '「いいえ」と言う練習をしてみましょう。自分の価値観リストを作成してみましょう。' }, { level: 'weak', label: '弱い自我境界', desc: 'アイデンティティが不明確で、他者に流されやすいです。', action: 'アイデンティティ探索のジャーナリングと境界設定トレーニングをしてみましょう。' }] },
+      ego: { title: '自我境界・強度尺度', desc: '自分のアイデンティティと自己表現について答えてください。', options_key: 'options_likert5', questions: ['自分が何を求めているかを明確に知っている', '他者の意見に簡単に流されない自分だけの価値観がある', '他人からの頼みを断るのが非常に難しい', '自分の感情と他者の感情を区別するのが難しいことがある', '自分がどんな人間かについての明確なアイデンティティがある', '周囲の人の期待に合わせて自分を変える傾向がある', '自分の境界線を他者に明確に伝えることができる', '対立状況で自分の立場を明確に表現できる'], levels: [{ level: 'weak', label: '弱い自我境界', desc: 'アイデンティティが不明確で、他者に流されやすいです。', action: 'アイデンティティ探索のジャーナリングと境界設定トレーニングをしてみましょう。' }, { level: 'moderate', label: '普通のレベル', desc: '状況によって自己境界が揺らぐことがあります。', action: '「いいえ」と言う練習をしてみましょう。自分の価値観リストを作成してみましょう。' }, { level: 'strong', label: '強い自我境界', desc: '明確な自己アイデンティティと健全な境界線を持っています。', action: '現在の自我の強さを維持しながら、関係における柔軟性も発揮してみましょう。' }] },
     },
   },
   zh: {
@@ -552,14 +552,14 @@ const i18n: Record<string, any> = {
 
 // ─── 검사 메타 데이터 ───────────────────────────────────────────
 const TEST_META: Record<string, { color: string; icon: string; category: string; levelMaxes: number[] }> = {
-  phq9:         { color: '#4F8EF7', icon: '💙', category: 'clinical',    levelMaxes: [4, 9, 14, 19, 27] },
-  gad7:         { color: '#6c63ff', icon: '💜', category: 'clinical',    levelMaxes: [4, 9, 14, 21] },
-  stress:       { color: '#20c997', icon: '💚', category: 'clinical',    levelMaxes: [14, 29, 44, 60] },  // 20q×3 → max60
+  phq9:         { color: '#4F8EF7', icon: '💙', category: 'clinical',    levelMaxes: [4, 9, 14, 19, 27] },   // 9q×3 → max27
+  gad7:         { color: '#6c63ff', icon: '💜', category: 'clinical',    levelMaxes: [4, 9, 14, 21] },        // 7q×3 → max21
+  stress:       { color: '#20c997', icon: '💚', category: 'clinical',    levelMaxes: [14, 29, 44, 60] },      // 20q×3 → max60
   ecr:          { color: '#f472b6', icon: '💗', category: 'attachment',  levelMaxes: [24, 36, 48, 72] },
-  rses:         { color: '#fbbf24', icon: '⭐', category: 'selfgrowth',  levelMaxes: [30, 45, 60] },      // 15q×4 → max60
-  relationship: { color: '#f97316', icon: '💕', category: 'attachment',  levelMaxes: [40, 65, 100] },     // 20q×5 → max100
-  ders:         { color: '#a78bfa', icon: '🌊', category: 'selfgrowth',  levelMaxes: [32, 52, 80] },      // 16q×5 → max80
-  ego:          { color: '#34d399', icon: '🧱', category: 'selfgrowth',  levelMaxes: [37, 56, 75] },      // 15q×5 → max75
+  rses:         { color: '#fbbf24', icon: '⭐', category: 'selfgrowth',  levelMaxes: [15, 30, 45] },          // [FIX] 15q×3 → max45 (options_agree4 val 0~3)
+  relationship: { color: '#f97316', icon: '💕', category: 'attachment',  levelMaxes: [25, 50, 76] },          // [FIX] 19q×4 → max76 (options_likert5 val 0~4)
+  ders:         { color: '#a78bfa', icon: '🌊', category: 'selfgrowth',  levelMaxes: [20, 40, 60] },          // [FIX] 15q×4 → max60 (options_likert5 val 0~4)
+  ego:          { color: '#34d399', icon: '🧱', category: 'selfgrowth',  levelMaxes: [20, 40, 60] },          // [FIX] 15q×4 → max60 / 레벨 순서도 weak→strong으로 수정
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -569,20 +569,27 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const REVERSE_SCORED: Record<string, number[]> = {
-  // RSES 15문항: 역채점 항목 (0-indexed: 2,4,7,8,9,11,13)
+  // RSES 15문항: 역채점 항목 ✅ 확인됨 (0-indexed: 2,4,7,8,9,11,13)
   rses:         [2, 4, 7, 8, 9, 11, 13],
-  // 연애패턴 20문항: 역채점 항목 (0-indexed: 2,7,12,15)
-  relationship: [2, 7, 12, 15],
-  // 자아경계 15문항: 역채점 항목 (0-indexed: 2,3,5,9,12,13)
-  ego:          [2, 3, 5, 9, 12, 13],
-  // DERS 16문항: 역채점 항목 (0-indexed: 11)
-  ders:         [11],
+  // 연애패턴 19문항: 역채점 항목 [FIX] 12→없음, 15→없음, 14→있음 (0-indexed: 2,7,14)
+  relationship: [2, 7, 14],
+  // 자아경계 15문항: 역채점 항목 [FIX] 12→일반, 11→역채점 (0-indexed: 2,3,5,9,11,13)
+  ego:          [2, 3, 5, 9, 11, 13],
+  // DERS 15문항: 역채점 항목 [FIX] 11→일반, 14→역채점 (0-indexed: 14)
+  ders:         [14],
 };
 
 function computeScore(testKey: string, answers: number[], optionKey: string): number {
   const reverseIndices = REVERSE_SCORED[testKey] || [];
-  // options_4: 0~3, options_6: 1~6, options_agree4: 1~4 (순서 반전), options_likert5: 1~5
-  const maxVal = optionKey === 'options_6' ? 7 : optionKey === 'options_likert5' ? 6 : optionKey === 'options_agree4' ? 5 : 4;
+  // [FIX] maxVal = 배열 최대 인덱스 (역채점 대칭성 보장)
+  // options_4: val 0~3 → maxVal=3
+  // options_6: val 0~5 → maxVal=5 (ECR, 역채점 항목 없음)
+  // options_agree4: val 0~3 → maxVal=3 (RSES: agree=0, disagree=3)
+  // options_likert5: val 0~4 → maxVal=4 (DERS, Ego, Relationship)
+  const maxVal = optionKey === 'options_6' ? 5
+               : optionKey === 'options_likert5' ? 4
+               : optionKey === 'options_agree4' ? 3
+               : 3;  // options_4
   return answers.reduce((sum, val, idx) => {
     const v = reverseIndices.includes(idx) ? (maxVal - val) : val;
     return sum + v;

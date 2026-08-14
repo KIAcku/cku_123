@@ -125,15 +125,19 @@ async def get_integrated_report(
 
     # 도메인별 점수 정규화 (0~100 스케일)
     NORMALIZERS = {
-        "phq9":        {"max": 27,  "invert": True},   # 9q × 3
-        "gad7":        {"max": 21,  "invert": True},   # 7q × 3
-        "stress":      {"max": 60,  "invert": True},   # 20q × 3
-        "rses":        {"max": 60,  "invert": False},  # 15q × 4
+        "phq9":        {"max": 27,  "invert": True},   # 9q × 3 → max27
+        "gad7":        {"max": 21,  "invert": True},   # 7q × 3 → max21
+        "stress":      {"max": 60,  "invert": True},   # 20q × 3 → max60
+        # [FIX] rses: max60→45 (15q×3, options_agree4 val0~3), invert False→True (낙은 점수=건강한 자존감)
+        "rses":        {"max": 45,  "invert": True},
         "ecr_anxiety": {"max": 36,  "invert": True},   # 6 anxiety × 6
         "ecr_avoid":   {"max": 36,  "invert": True},   # 6 avoidant × 6
-        "relationship":{"max": 100, "invert": True},  # 20q × 5
-        "ders":        {"max": 80,  "invert": True},   # 16q × 5
-        "ego":         {"max": 75,  "invert": False},  # 15q × 5
+        # [FIX] relationship: max100→76 (19q×4, options_likert5 val0~4)
+        "relationship":{"max": 76,  "invert": True},
+        # [FIX] ders: max80→60 (15q×4, options_likert5 val0~4)
+        "ders":        {"max": 60,  "invert": True},
+        # [FIX] ego: max75→60 (15q×4, options_likert5 val0~4), invert=False (높은 점수=강한 자아)
+        "ego":         {"max": 60,  "invert": False},
     }
 
     ecr_data = latest.get("ecr")
