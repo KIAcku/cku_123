@@ -581,15 +581,28 @@ const REVERSE_SCORED: Record<string, number[]> = {
 
 function computeScore(testKey: string, answers: number[], optionKey: string): number {
   const reverseIndices = REVERSE_SCORED[testKey] || [];
-  // [FIX] maxVal = 배열 최대 인덱스 (역채점 대칭성 보장)
-  // options_4: val 0~3 → maxVal=3
-  // options_6: val 0~5 → maxVal=5 (ECR, 역채점 항목 없음)
-  // options_agree4: val 0~3 → maxVal=3 (RSES: agree=0, disagree=3)
-  // options_likert5: val 0~4 → maxVal=4 (DERS, Ego, Relationship)
+
+  // options_agree4 (RSES): 레이블이 (4)(3)(2)(1) 내림차순
+  //   → val=0이 "매우동의(4)" = 가장 강한 동의
+  //   → 긍정 문항에서 강한 동의 = 높은 자존감 기여 = 높은 점수
+  //   → 이 스케일은 기본이 "역방향"이므로:
+  //      정상 문항: score = maxVal - val  (agree=high)
+  //      역채점 문항: score = val          (agree=low, 이중역전)
+  if (optionKey === 'options_agree4') {
+    const maxVal = 3; // 4개 옵션, 인덱스 0~3
+    return answers.reduce((sum, val, idx) => {
+      const v = reverseIndices.includes(idx) ? val : (maxVal - val);
+      return sum + v;
+    }, 0);
+  }
+
+  // options_likert5 / options_4 / options_6: 레이블이 오름차순 (1→5 등)
+  //   val=0이 최소, val=max가 최대
+  //   정상 문항: score = val
+  //   역채점 문항: score = maxVal - val
   const maxVal = optionKey === 'options_6' ? 5
                : optionKey === 'options_likert5' ? 4
-               : optionKey === 'options_agree4' ? 3
-               : 3;  // options_4
+               : 3;  // options_4: val 0~3
   return answers.reduce((sum, val, idx) => {
     const v = reverseIndices.includes(idx) ? (maxVal - val) : val;
     return sum + v;

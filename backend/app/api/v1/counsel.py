@@ -187,7 +187,39 @@ async def get_integrated_report(
         "weak_areas":   [{"domain": k, "score": v} for k, v in weak_areas],
         "strong_areas": [{"domain": k, "score": v} for k, v in strong_areas],
         "completed_types": list(latest.keys()),
+        # B2: 위험 신호 플래그 (PHQ-9 ≥ 10, GAD-7 ≥ 10)
+        "risk_flags": {
+            "phq9_high": latest.get("phq9") is not None and latest["phq9"]["score"] >= 10,
+            "gad7_high": latest.get("gad7") is not None and latest["gad7"]["score"] >= 10,
+            "stress_high": latest.get("stress") is not None and latest["stress"]["score"] >= 45,
+        },
     }
+
+
+@router.get("/tests/history/{test_type}")
+async def get_test_history(
+    test_type: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """특정 검사 유형의 전체 이력을 날짜순으로 반환 (시계열 추이용)."""
+    res = await db.execute(
+        select(TestResult)
+        .where(TestResult.user_id == current_user.id, TestResult.test_type == test_type)
+        .order_by(TestResult.created_at.asc())
+    )
+    results = res.scalars().all()
+    return [
+        {
+            "id": r.id,
+            "test_type": r.test_type,
+            "score": r.score,
+            "level": r.level,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "date": r.created_at.strftime("%Y-%m-%d") if r.created_at else None,
+        }
+        for r in results
+    ]
 
 
 @router.get("/tests", response_model=List[TestResultOut])
@@ -200,6 +232,7 @@ async def get_tests(
         .order_by(TestResult.created_at.desc())
     )
     return res.scalars().all()
+
 
 
 # ─── 상담 세션 ─────────────────────────────────────────────
