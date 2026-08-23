@@ -22,9 +22,17 @@ class DiaryResponse(BaseModel):
     emotion_score: Optional[str] = "3"
     created_at: datetime
     updated_at: Optional[datetime] = None
+    weather_tag: Optional[str] = None       # 상담사 날씨 태그
+    counselor_note: Optional[str] = None    # 상담사 메모
+    tagged_by: Optional[str] = None         # 태그한 상담사 ID
 
     class Config:
         from_attributes = True
+
+class WeatherTagRequest(BaseModel):
+    weather_tag: Optional[str] = None   # ☀️ 🌤️ ⛅ 🌧️ ⛈️ 🌈
+    counselor_note: Optional[str] = None
+
 
 class EmotionStat(BaseModel):
     emotion: str

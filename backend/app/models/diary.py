@@ -13,3 +13,7 @@ class DiaryEntry(Base):
     emotion_score = Column(String(10), default="3")  # 1~5
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # 상담사 날씨 태그 필드
+    weather_tag = Column(String(10), nullable=True)   # ☀️🌤️⛅🌧️⛈️🌈
+    counselor_note = Column(Text, nullable=True)       # 상담사 메모
+    tagged_by = Column(String(36), ForeignKey("users.id"), nullable=True)  # 태그한 상담사 ID

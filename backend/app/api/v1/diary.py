@@ -5,13 +5,105 @@ from sqlalchemy import func
 from typing import List
 from app.core.database import get_db
 from app.models.diary import DiaryEntry
-from app.schemas.schemas import DiaryCreate, DiaryUpdate, DiaryResponse, DiaryStats, EmotionStat
+from app.schemas.schemas import DiaryCreate, DiaryUpdate, DiaryResponse, DiaryStats, EmotionStat, WeatherTagRequest
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.core.encryption import encrypt, decrypt
 from datetime import datetime, date, timedelta, timezone
 
 router = APIRouter()
+
+# ─── 상담사 전용: 학생 목록 ─────────────────────────────────────
+@router.get("/counselor/students")
+async def counselor_get_students(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """상담사가 전체 학생 목록 + 각 학생의 일기 수를 조회합니다."""
+    if current_user.role not in ("COUNSELOR", "ADMIN"):
+        raise HTTPException(status_code=403, detail="상담사 계정만 접근 가능합니다.")
+    res = await db.execute(
+        select(User).where(User.role == "STUDENT", User.is_active == True)
+        .order_by(User.nickname)
+    )
+    students = res.scalars().all()
+    result = []
+    for s in students:
+        cnt = await db.execute(
+            select(func.count(DiaryEntry.id)).where(DiaryEntry.user_id == s.id)
+        )
+        result.append({
+            "id": s.id,
+            "nickname": s.nickname,
+            "email": s.email,
+            "diary_count": cnt.scalar() or 0,
+        })
+    return result
+
+
+# ─── 상담사 전용: 특정 학생 일기 조회 ─────────────────────────
+@router.get("/counselor/student/{student_id}", response_model=List[DiaryResponse])
+async def counselor_get_student_diaries(
+    student_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """상담사가 특정 학생의 감정 일기를 조회합니다."""
+    if current_user.role not in ("COUNSELOR", "ADMIN"):
+        raise HTTPException(status_code=403, detail="상담사 계정만 접근 가능합니다.")
+    # 학생 존재 확인
+    student_res = await db.execute(select(User).where(User.id == student_id, User.role == "STUDENT"))
+    student = student_res.scalars().first()
+    if not student:
+        raise HTTPException(status_code=404, detail="학생을 찾을 수 없습니다.")
+    limit = min(max(1, limit), 200)
+    result = await db.execute(
+        select(DiaryEntry)
+        .where(DiaryEntry.user_id == student_id)
+        .order_by(DiaryEntry.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    entries = result.scalars().all()
+    for entry in entries:
+        entry.content = decrypt(entry.content)
+    return entries
+
+
+# ─── 상담사 전용: 날씨 태그 + 메모 달기 ───────────────────────
+@router.patch("/counselor/{diary_id}/tag")
+async def counselor_tag_diary(
+    diary_id: str,
+    body: WeatherTagRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """상담사가 학생 일기에 날씨 태그와 메모를 답니다."""
+    if current_user.role not in ("COUNSELOR", "ADMIN"):
+        raise HTTPException(status_code=403, detail="상담사 계정만 접근 가능합니다.")
+    result = await db.execute(select(DiaryEntry).where(DiaryEntry.id == diary_id))
+    entry = result.scalars().first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+    if body.weather_tag is not None:
+        entry.weather_tag = body.weather_tag
+    if body.counselor_note is not None:
+        entry.counselor_note = body.counselor_note
+    entry.tagged_by = current_user.id
+    entry.updated_at = datetime.now(timezone.utc)
+    db.add(entry)
+    await db.commit()
+    await db.refresh(entry)
+    return {
+        "id": entry.id,
+        "weather_tag": entry.weather_tag,
+        "counselor_note": entry.counselor_note,
+        "tagged_by": entry.tagged_by,
+    }
+
+
 
 @router.post("", response_model=DiaryResponse, status_code=201)
 async def create_diary(

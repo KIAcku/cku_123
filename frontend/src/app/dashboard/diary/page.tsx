@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { useLangStore } from '@/store/langStore';
 import { API_BASE } from '@/lib/apiClient';
@@ -118,7 +118,7 @@ const EMOTION_META = [
   { value: 'tired',   emoji: '😴', color: '#EC4899' },
 ];
 
-type Diary = { id: string; content: string; emotion: string; emotion_score: string; created_at: string; updated_at?: string };
+type Diary = { id: string; content: string; emotion: string; emotion_score: string; created_at: string; updated_at?: string; weather_tag?: string; counselor_note?: string };
 type DiaryStats = { total: number; this_month: number; streak_days: number; emotion_distribution: { emotion: string; count: number }[] };
 
 function groupByDate(diaries: Diary[], locale: string) {
@@ -362,12 +362,22 @@ export default function DiaryPage() {
                             <div key={d.id} className="glass-card-sm" style={{display:'flex',gap:14,alignItems:'flex-start',padding:'16px',marginBottom:0}}>
                               <div style={{width:44,height:44,borderRadius:'var(--radius-md)',background:`${em?.color}18`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.4rem',flexShrink:0}}>{em?.emoji||'😐'}</div>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap'}}>
                                   <span className="badge" style={{background:`${em?.color}18`,color:em?.color,fontWeight:600}}>{em?.label||d.emotion}</span>
                                   <span style={{fontSize:'0.75rem',color:'var(--text-muted)'}}>{t.intensity_badge.replace('{score}',d.emotion_score)}</span>
                                   {d.updated_at&&<span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>{t.edited_badge}</span>}
+                                  {/* 상담사 날씨 태그 */}
+                                  {d.weather_tag&&(
+                                    <span title="상담사 감정 태그" style={{fontSize:'1.1rem',cursor:'default'}}>{d.weather_tag}</span>
+                                  )}
                                 </div>
                                 <p style={{fontSize:'0.875rem',color:'var(--text-primary)',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{d.content}</p>
+                                {/* 상담사 메모 */}
+                                {d.counselor_note&&(
+                                  <div style={{marginTop:8,padding:'6px 10px',background:'rgba(167,139,250,0.08)',borderRadius:8,fontSize:'0.78rem',color:'#a78bfa',borderLeft:'3px solid #a78bfa'}}>
+                                    📝 {d.counselor_note}
+                                  </div>
+                                )}
                               </div>
                               <div style={{display:'flex',gap:6,flexShrink:0}}>
                                 <button className="btn btn-glass btn-sm" onClick={()=>{setEditTarget(d);setShowModal(true);}}>✏️</button>
