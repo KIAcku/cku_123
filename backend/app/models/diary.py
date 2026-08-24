@@ -16,4 +16,5 @@ class DiaryEntry(Base):
     # 상담사 날씨 태그 필드
     weather_tag = Column(String(10), nullable=True)   # ☀️🌤️⛅🌧️⛈️🌈
     counselor_note = Column(Text, nullable=True)       # 상담사 메모
-    tagged_by = Column(String(36), ForeignKey("users.id"), nullable=True)  # 태그한 상담사 ID
+    tagged_by = Column(String(36), nullable=True)  # 태그한 상담사 ID (FK 없이 단순 저장)
+

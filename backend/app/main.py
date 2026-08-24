@@ -78,6 +78,11 @@ def check_and_add_columns(sync_conn):
     add_column_if_missing("posts", "image_url", "VARCHAR(500)")
     add_column_if_missing("counsel_messages", "image_url", "VARCHAR(500)")
 
+    # diary_entries 상담사 태그 컬럼 추치 (2024-08-23 추가)
+    add_column_if_missing("diary_entries", "weather_tag", "VARCHAR(10)")
+    add_column_if_missing("diary_entries", "counselor_note", "TEXT")
+    add_column_if_missing("diary_entries", "tagged_by", "VARCHAR(36)")
+
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
