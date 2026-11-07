@@ -93,11 +93,21 @@ export default function FindIdPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose: 'find_id' }),
       });
-      if (res.ok) { setMessage(t.code_sent); setStep(2); }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.dev_code) {
+          setCode(data.dev_code);
+          setMessage(`📋 이메일 발송 불가 (SMTP 미설정) — 인증 코드: ${data.dev_code}`);
+        } else {
+          setMessage(t.code_sent);
+        }
+        setStep(2);
+      }
       else { const d = await res.json(); setError(d.detail || '오류가 발생했습니다.'); }
     } catch { setError('네트워크 오류가 발생했습니다.'); }
     setLoading(false);
   };
+
 
   const verifyCode = async () => {
     if (!code.trim()) { setError(t.error_code); return; }

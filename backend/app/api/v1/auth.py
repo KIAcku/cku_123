@@ -204,32 +204,46 @@ async def send_verification_code(data: SendCodeRequest, db: AsyncSession = Depen
     # 이메일 발송 시도
     from app.core.config import settings
     sent = False
-    if settings.SMTP_HOST:
+    if settings.SMTP_HOST and settings.SMTP_USER:
         try:
             import aiosmtplib
-            from email.mime.text import MIMEText
-            msg = MIMEText(f"[마음이음] 인증 코드: {code} (10분 내 사용)")
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText as MIMETextPart
+            msg = MIMEMultipart("alternative")
             msg['Subject'] = '[마음이음] 이메일 인증 코드'
             msg['From'] = settings.SMTP_FROM
             msg['To'] = data.email
+            html_body = f"""
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f8f9fa;border-radius:12px;">
+              <h2 style="color:#6c63ff;margin-bottom:8px;">마음이음 인증 코드</h2>
+              <p style="color:#555;margin-bottom:24px;">아래 6자리 코드를 입력해주세요. 코드는 10분 후 만료됩니다.</p>
+              <div style="font-size:2.5rem;font-weight:900;letter-spacing:8px;color:#1a1a1a;text-align:center;background:white;padding:20px;border-radius:8px;border:2px solid #e0e0e0;">{code}</div>
+              <p style="color:#999;font-size:0.8rem;margin-top:24px;">본인이 요청하지 않은 경우 이 메일을 무시하세요.</p>
+            </div>"""
+            msg.attach(MIMETextPart(html_body, "html"))
             await aiosmtplib.send(
                 msg,
                 hostname=settings.SMTP_HOST,
                 port=settings.SMTP_PORT,
                 username=settings.SMTP_USER,
                 password=settings.SMTP_PASS,
-                start_tls=True
+                start_tls=True,
             )
             sent = True
         except Exception as e:
-            # [SECURITY] 코드를 로그에 출력하지 않음 — 이메일만 기록
-            print(f"[EMAIL ERROR] {data.email}에 발송 실패: {type(e).__name__}")
+            print(f"[EMAIL ERROR] {data.email}에 발송 실패: {type(e).__name__}: {e}")
+
     if not sent:
-        # [DEV] 개발 환경에서만 stdout으로 코드 확인 (프로덕션에서는 SMTP_HOST 설정 필요)
-        import os
-        if os.getenv("APP_ENV", "development") == "development":
-            print(f"[DEV 인증코드] {data.email} 용 코드가 DB에 저장됨 (SMTP 미설정)")
-    return {"message": "인증 코드가 발송되었습니다."}
+        # SMTP 미설정 시 코드를 응답에 포함 (프론트에서 표시)
+        print(f"[NOTICE] SMTP 미설정 — {data.email} 인증코드 발급됨")
+        return {
+            "message": "SMTP 미설정: 아래 코드를 직접 입력하세요.",
+            "dev_code": code,
+            "smtp_configured": False,
+        }
+
+    return {"message": "인증 코드가 발송되었습니다.", "smtp_configured": True}
+
 
 class VerifyCodeRequest(BaseModel):
     email: str

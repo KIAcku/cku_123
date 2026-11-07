@@ -163,19 +163,36 @@ async def get_diary_stats(
         .where(DiaryEntry.user_id == current_user.id)
         .order_by(DiaryEntry.created_at.desc())
     )
-    all_dates = [row[0].date() for row in all_dates_result.all() if row[0]]
+    all_dates_raw = all_dates_result.all()
+
+    # KST(+9h) 기준으로 날짜 변환 — UTC로 저장된 시간이 한국 날짜와 달라지는 버그 방지
+    from datetime import timezone as tz_module
+    KST_OFFSET = timedelta(hours=9)
+    all_dates = []
+    for row in all_dates_raw:
+        if row[0]:
+            dt = row[0]
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            all_dates.append((dt + KST_OFFSET).date())
+
     written_days = sorted(set(all_dates), reverse=True)  # 중복 제거 + 내림차순
 
-    # [FIX] 서버 로컬 시간이 아닌 UTC 기준 오늘 사용
-    today = datetime.now(timezone.utc).date()
+    # KST 기준 오늘 날짜
+    now_kst = datetime.now(timezone.utc) + KST_OFFSET
+    today_kst = now_kst.date()
+    yesterday_kst = today_kst - timedelta(days=1)
+
     streak = 0
-    check_date = today
-    for d in written_days:
-        if d == check_date:
-            streak += 1
-            check_date = check_date - timedelta(days=1)
-        elif d < check_date:
-            break
+    # 오늘 또는 어제 작성분부터 streak 시작
+    if written_days and written_days[0] >= yesterday_kst:
+        check_date = written_days[0]  # 가장 최근 날짜부터 역산
+        for d in written_days:
+            if d == check_date:
+                streak += 1
+                check_date = check_date - timedelta(days=1)
+            elif d < check_date:
+                break
 
     return DiaryStats(
         total=total,
@@ -183,6 +200,7 @@ async def get_diary_stats(
         emotion_distribution=emotion_distribution,
         streak_days=streak
     )
+
 
 
 
