@@ -197,6 +197,7 @@ export default function DiaryPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [toast, setToast] = useState('');
   const [editTarget, setEditTarget] = useState<Diary|null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -216,18 +217,39 @@ export default function DiaryPage() {
   const hdrs = () => ({ Authorization:`Bearer ${token()}`,'Content-Type':'application/json' });
   const showToast = (m:string) => { setToast(m); setTimeout(()=>setToast(''),3000); };
 
+  const fetchWithTimeout = async (url: string, opts: RequestInit = {}, ms = 60000) => {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const r = await fetch(url, { ...opts, signal: ctrl.signal });
+      clearTimeout(tid);
+      return r;
+    } catch (e: any) {
+      clearTimeout(tid);
+      throw e;
+    }
+  };
+
   const fetchDiaries = async () => {
     setFetching(true);
+    setFetchError(false);
     try {
-      const r = await fetch(`${API_BASE}/diaries`,{headers:{Authorization:`Bearer ${token()}`}});
+      const r = await fetchWithTimeout(`${API_BASE}/diaries`, {headers:{Authorization:`Bearer ${token()}`}}, 60000);
       if (r.ok) setDiaries(await r.json());
       else if (r.status===401||r.status===403) showToast(lang==='ko'?'세션이 만료되었습니다. 다시 로그인해주세요.':'Session expired. Please log in again.');
-      else showToast(lang==='ko'?`일기를 불러오지 못했습니다.(${r.status})`:`Failed to load.(${r.status})`);
-    } catch { showToast(lang==='ko'?'네트워크 오류':'Network error'); }
+      else { showToast(lang==='ko'?`일기를 불러오지 못했습니다.(${r.status})`:`Failed to load.(${r.status})`); setFetchError(true); }
+    } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        showToast(lang==='ko'?'서버 응답이 너무 느려요. 잠시 후 다시 시도해 주세요.':'Server is slow. Please try again in a moment.');
+      } else {
+        showToast(lang==='ko'?'서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.':'Cannot connect to server. Check your internet connection.');
+      }
+      setFetchError(true);
+    }
     setFetching(false);
   };
   const fetchStats = async () => {
-    try { const r=await fetch(`${API_BASE}/diaries/stats`,{headers:{Authorization:`Bearer ${token()}`}}); if(r.ok) setStats(await r.json()); } catch {}
+    try { const r=await fetchWithTimeout(`${API_BASE}/diaries/stats`,{headers:{Authorization:`Bearer ${token()}`}},60000); if(r.ok) setStats(await r.json()); } catch {}
   };
   useEffect(()=>{ fetchDiaries(); fetchStats(); },[]);
 
@@ -330,7 +352,8 @@ export default function DiaryPage() {
 
       {activeTab==='list'&&(
         <div>
-          {fetching?(<div className="empty-state"><div className="empty-icon">⏳</div><p>{t.empty_fetching}</p></div>)
+          {fetching?(<div className="empty-state"><div className="empty-icon">⏳</div><p>{t.empty_fetching}</p><p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:4}}>{lang==='ko'?'서버가 슬립 상태에서 깨어나는 중이에요. 최대 1분 소요될 수 있어요.':'Server is waking up. This may take up to 1 minute.'}</p></div>)
+          :fetchError?(<div className="empty-state"><div className="empty-icon">🔌</div><p>{lang==='ko'?'서버에 연결하지 못했어요':'Could not connect to server'}</p><button className="btn btn-sunset" onClick={()=>{fetchDiaries();fetchStats();}}>{lang==='ko'?'다시 시도':'Retry'}</button></div>)
           :diaries.length===0?(<div className="empty-state"><div className="empty-icon">📔</div><p>{t.empty_title}</p><button className="btn btn-sunset" onClick={()=>setActiveTab('write')}>{t.empty_btn}</button></div>)
           :(
             <>
